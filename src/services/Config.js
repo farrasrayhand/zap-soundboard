@@ -313,39 +313,3 @@ export class Config extends Service {
     }
 
 }
-ild = file.get_child(childInfo.get_name());
-                    this.#deleteRecursive(child);
-                }
-            }
-            file.delete(null);
-        } catch (e) {
-            console.warn(`Failed to delete ${file.get_path()}: ${e.message}`);
-        }
-    }
-
-}
-ll);
-                let childInfo;
-                while ((childInfo = enumerator.next_file(null)) !== null) {
-                    const child = file.get_child(childInfo.get_name());
-                    this.#deleteRecursive(child);
-                }
-            }
-            file.delete(null);
-        } catch (e) {
-            console.warn(`Failed to delete ${file.get_path()}: ${e.message}`);
-        }
-    }
-
-}
-ild = file.get_child(childInfo.get_name());
-                    this.#deleteRecursive(child);
-                }
-            }
-            file.delete(null);
-        } catch (e) {
-            console.warn(`Failed to delete ${file.get_path()}: ${e.message}`);
-        }
-    }
-
-}
