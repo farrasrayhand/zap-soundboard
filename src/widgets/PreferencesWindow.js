@@ -35,11 +35,20 @@ export class PreferencesWindow extends Adw.Window {
 
         this.#loadSettings();
         this.#syncPauseSensitivity();
+        this.#syncStopHotkeySensitivity();
 
         this._safetyModeSwitch.connect('notify::active', () => this.#syncPauseSensitivity());
+        this._hideStopButtonSwitch.connect('notify::active', () => this.#syncStopHotkeySensitivity());
 
         this.#setupHotkeyEntry(this._stopHotkeyEntry);
         this.#setupHotkeyEntry(this._fadeoutHotkeyEntry);
+    }
+
+    /**
+     * Synchronize the sensitivity of the Stop Hotkey option based on Hide Stop Button.
+     */
+    #syncStopHotkeySensitivity() {
+        this._stopHotkeyEntry.sensitive = !this._hideStopButtonSwitch.active;
     }
 
     /**

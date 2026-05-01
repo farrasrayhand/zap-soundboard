@@ -137,8 +137,9 @@ export class Window extends Adw.ApplicationWindow {
             // Global Hotkeys (Stop and Fade Out)
             const stopHotkey = globalThis.settings.get_string('stop-hotkey');
             const fadeoutHotkey = globalThis.settings.get_string('fadeout-hotkey');
+            const hideStopButton = globalThis.settings.get_boolean('hide-stop-button');
 
-            if (key === stopHotkey) {
+            if (key === stopHotkey && !hideStopButton) {
                 globalThis.player.stop();
                 return true;
             }
