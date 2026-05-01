@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
+<gresources>
+	<gresource prefix="/fr/romainvigier/zap">
+		<file alias="style.css">css/style.css</file>
+		<file alias="style-dark.css">css/style-dark.css</file>
+		<file alias="style-hc.css">css/style-hc.css</file>
+		<file>css/colorpill-color.template.css</file>
+		<file>css/zap-item-color.template.css</file>
+		<file>css/zap-item-color-dark.template.css</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-add-symbolic.svg">icons/add-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-clear-symbolic.svg">icons/clear-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-clear-symbolic-rtl.svg">icons/clear-symbolic-rtl.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-close-symbolic.svg">icons/close-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-done-symbolic.svg">icons/done-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-edit-symbolic.svg">icons/edit-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-edit-symbolic-rtl.svg">icons/edit-symbolic-rtl.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-fadeout-symbolic.svg">icons/fadeout-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-fadeout-symbolic-rtl.svg">icons/fadeout-symbolic-rtl.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-open-down-symbolic.svg">icons/open-down-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-open-menu-symbolic.svg">icons/open-menu-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-play-symbolic.svg">icons/play-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-play-symbolic-rtl.svg">icons/play-symbolic-rtl.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/status/fr.romainvigier.zap-playing-symbolic.svg">icons/playing-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/status/fr.romainvigier.zap-playing-symbolic-rtl.svg">icons/playing-symbolic-rtl.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-repeat-symbolic.svg">icons/repeat-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-repeat-symbolic-rtl.svg">icons/repeat-symbolic-rtl.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-stop-symbolic.svg">icons/stop-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-trash-symbolic.svg">icons/trash-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/status/fr.romainvigier.zap-volume-high-symbolic.svg">icons/volume-high-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/status/fr.romainvigier.zap-volume-high-symbolic-rtl.svg">icons/volume-high-symbolic-rtl.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/status/fr.romainvigier.zap-volume-low-symbolic.svg">icons/volume-low-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/status/fr.romainvigier.zap-volume-low-symbolic-rtl.svg">icons/volume-low-symbolic-rtl.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/status/fr.romainvigier.zap-volume-medium-symbolic.svg">icons/volume-medium-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/status/fr.romainvigier.zap-volume-medium-symbolic-rtl.svg">icons/volume-medium-symbolic-rtl.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/status/fr.romainvigier.zap-volume-mute-symbolic.svg">icons/volume-mute-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/status/fr.romainvigier.zap-volume-mute-symbolic-rtl.svg">icons/volume-mute-symbolic-rtl.svg</file>
+		<file>sounds/applause.ogg</file>
+		<file>sounds/bark.ogg</file>
+		<file>sounds/theme-song-8bit-loop.ogg</file>
+		<file preprocess="xml-stripblanks">ui/AddZapPopup.ui</file>
+		<file preprocess="xml-stripblanks">ui/CollectionItem.ui</file>
+		<file preprocess="xml-stripblanks">ui/CollectionListItem.ui</file>
+		<file preprocess="xml-stripblanks">ui/CollectionsMenuButton.ui</file>
+		<file preprocess="xml-stripblanks">ui/EditZapPopover.ui</file>
+		<file preprocess="xml-stripblanks">ui/FileChooserButton.ui</file>
+		<file preprocess="xml-stripblanks" alias="gtk/help-overlay.ui">ui/ShortcutsWindow.ui</file>
+		<file preprocess="xml-stripblanks">ui/Window.ui</file>
+		<file preprocess="xml-stripblanks">ui/ZapItem.ui</file>
+		<file preprocess="xml-stripblanks">ui/ZapListItem.ui</file>
+	</gresource>
+</gresources>

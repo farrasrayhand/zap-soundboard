@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
+<interface>
+	<template class="GtkListItem">
+		<property name="activatable">false</property>
+		<property name="selectable">false</property>
+		<property name="child">
+			<object class="ZapCollectionItem">
+				<binding name="collection">
+					<lookup name="item">GtkListItem</lookup>
+				</binding>
+			</object>
+		</property>
+	</template>
+</interface>

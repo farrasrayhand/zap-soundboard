@@ -1,0 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+colorpill.$color_id > button {
+	background-color: $color_value;
+}

@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+option (
+  'devel',
+  type: 'boolean',
+  value: false,
+  description: 'Build the app with the development style'
+)

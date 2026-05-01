@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
+<interface>
+	<object class="GtkShortcutsWindow" id="help_overlay">
+		<child>
+			<object class="GtkShortcutsSection">
+				<child>
+					<object class="GtkShortcutsGroup">
+						<property name="title" translatable="yes">Zap Management</property>
+						<child>
+							<object class="GtkShortcutsShortcut">
+								<property name="title" translatable="yes">Open Add Zap Popup</property>
+								<property name="action-name">win.open-add-zap-popup</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkShortcutsShortcut">
+								<property name="title" translatable="yes">Open Collections Popover</property>
+								<property name="action-name">win.open-collections-popover</property>
+							</object>
+						</child>
+					</object>
+				</child>
+				<child>
+					<object class="GtkShortcutsGroup">
+						<property name="title" translatable="yes">General</property>
+						<child>
+							<object class="GtkShortcutsShortcut">
+								<property name="title" translatable="yes">New Window</property>
+								<property name="action-name">app.new-window</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkShortcutsShortcut">
+								<property name="title" translatable="yes">Close Window</property>
+								<property name="action-name">window.close</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkShortcutsShortcut">
+								<property name="title" translatable="yes">Quit Application</property>
+								<property name="action-name">app.quit</property>
+							</object>
+						</child>
+					</object>
+				</child>
+			</object>
+		</child>
+	</object>
+</interface>

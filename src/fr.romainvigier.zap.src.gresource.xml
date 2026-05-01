@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
+<gresources>
+	<gresource prefix="/fr/romainvigier/zap/js">
+		<file>main.js</file>
+		<file>classes/Application.js</file>
+		<file>classes/Collection.js</file>
+		<file>classes/Zap.js</file>
+		<file>enums/Color.js</file>
+		<file>services/Collections.js</file>
+		<file>services/Config.js</file>
+		<file>services/Database.js</file>
+		<file>services/DBus.js</file>
+		<file>services/Player.js</file>
+		<file>services/Service.js</file>
+		<file>services/Zaps.js</file>
+		<file>widgets/AddZapPopup.js</file>
+		<file>widgets/CollectionItem.js</file>
+		<file>widgets/CollectionsMenuButton.js</file>
+		<file>widgets/ColorChooser.js</file>
+		<file>widgets/ColorPill.js</file>
+		<file>widgets/EditZapPopover.js</file>
+		<file>widgets/FileChooserButton.js</file>
+		<file>widgets/ProgressBar.js</file>
+		<file>widgets/Window.js</file>
+		<file>widgets/ZapItem.js</file>
+	</gresource>
+</gresources>

@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
+<interface>
+	<template class="ZapWindow">
+		<binding name="title">
+			<lookup name="name" type="ZapCollection">
+				<lookup name="selected-collection">ZapWindow</lookup>
+			</lookup>
+		</binding>
+		<property name="content">
+			<object class="GtkBox">
+				<property name="orientation">vertical</property>
+				<child>
+					<object class="GtkHeaderBar">
+						<property name="title-widget">
+							<object class="ZapCollectionsMenuButton" id="collectionsButton"/>
+						</property>
+						<child type="end">
+							<object class="GtkMenuButton">
+								<property name="tooltip-text" translatable="yes">Main Menu</property>
+								<property name="primary">true</property>
+								<property name="icon-name">fr.romainvigier.zap-open-menu-symbolic</property>
+								<property name="menu-model">main-menu</property>
+							</object>
+						</child>
+					</object>
+				</child>
+				<child>
+					<object class="GtkOverlay" id="addZapPopupOverlay">
+						<child>
+							<object class="GtkBox">
+								<property name="orientation">vertical</property>
+								<child>
+									<object class="GtkStack" id="zapsStack">
+										<property name="transition-type">crossfade</property>
+										<property name="hhomogeneous">false</property>
+										<property name="vhomogeneous">false</property>
+										<child>
+											<object class="GtkStackPage">
+												<property name="name">no-zaps</property>
+												<property name="child">
+													<object class="GtkBox">
+														<property name="orientation">vertical</property>
+														<property name="valign">center</property>
+														<style>
+															<class name="welcome"/>
+														</style>
+														<child>
+															<object class="GtkImage">
+																<property name="icon-name">fr.romainvigier.zap-symbolic</property>
+																<property name="pixel-size">64</property>
+															</object>
+														</child>
+														<child>
+															<object class="GtkLabel">
+																<property name="label" translatable="yes">Add Zaps to this collection by clicking the “+” button.</property>
+																<property name="justify">center</property>
+																<property name="wrap">true</property>
+																<style>
+																	<class name="dim-label"/>
+																</style>
+															</object>
+														</child>
+													</object>
+												</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkStackPage">
+												<property name="name">zaps</property>
+												<property name="child">
+													<object class="GtkScrolledWindow">
+														<property name="vexpand">true</property>
+														<property name="hscrollbar-policy">never</property>
+														<property name="propagate-natural-height">true</property>
+														<property name="child">
+															<object class="GtkGridView">
+																<property name="max-columns">24</property>
+																<property name="model">
+																	<object class="GtkNoSelection">
+																		<property name="model">
+																			<object class="GtkSortListModel">
+																				<property name="model">
+																					<object class="GtkFilterListModel">
+																						<signal name="items-changed" handler="onZapsModelItemsChanged"/>
+																						<property name="model" bind-source="ZapWindow" bind-property="zaps"/>
+																						<property name="filter">
+																							<object class="GtkStringFilter">
+																								<property name="match-mode">exact</property>
+																								<property name="expression">
+																									<lookup name="collection-uuid" type="Zap"/>
+																								</property>
+																								<binding name="search">
+																									<lookup name="uuid" type="ZapCollection">
+																										<lookup name="selected-collection">ZapWindow</lookup>
+																									</lookup>
+																								</binding>
+																							</object>
+																						</property>
+																					</object>
+																				</property>
+																				<property name="sorter">
+																					<object class="GtkNumericSorter">
+																						<property name="expression">
+																							<lookup name="position" type="Zap"/>
+																						</property>
+																					</object>
+																				</property>
+																			</object>
+																		</property>
+																	</object>
+																</property>
+																<property name="factory">
+																	<object class="GtkBuilderListItemFactory">
+																		<property name="resource">/fr/romainvigier/zap/ui/ZapListItem.ui</property>
+																	</object>
+																</property>
+																<style>
+																	<class name="zaps"/>
+																</style>
+															</object>
+														</property>
+													</object>
+												</property>
+											</object>
+										</child>
+									</object>
+								</child>
+								<child>
+									<object class="GtkButton">
+										<property name="tooltip-text" translatable="yes">Add a Zap</property>
+										<property name="icon-name">fr.romainvigier.zap-add-symbolic</property>
+										<property name="action-name">win.open-add-zap-popup</property>
+										<style>
+											<class name="flat"/>
+											<class name="add-zap"/>
+										</style>
+									</object>
+								</child>
+							</object>
+						</child>
+						<child type="overlay">
+							<object class="ZapAddZapPopup" id="addZapPopup">
+								<property name="valign">end</property>
+							</object>
+						</child>
+					</object>
+				</child>
+			</object>
+		</property>
+		<child>
+			<object class="GtkDropTarget">
+				<signal name="notify::value" handler="onFileDropValueChanged"/>
+				<signal name="drop" handler="onFileDropped"/>
+				<property name="actions">copy</property>
+				<property name="formats">GFile</property>
+				<property name="preload">true</property>
+			</object>
+		</child>
+	</template>
+	<object class="AdwAboutWindow" id="aboutWindow">
+		<property name="application-name" translatable="yes" comments="Translators: Application name, avoid translating it!">Zap</property>
+		<property name="application-icon">fr.romainvigier.zap</property>
+		<binding name="version">
+			<closure type="gchararray" function="getPackageVersion">ZapWindow</closure>
+		</binding>
+		<property name="developers">Romain Vigier https://www.romainvigier.fr/</property>
+		<property name="designers">Romain Vigier https://www.romainvigier.fr/</property>
+		<property name="artists">Romain Vigier https://www.romainvigier.fr/
+GNOME Design Team https://gitlab.gnome.org/Teams/Design
+eXpl0it3r https://opengameart.org/users/expl0it3r
+nene https://opengameart.org/users/nene</property>
+		<property name="translator-credits" translatable="yes" comments="Translators: Replace `translator-credits` by your name, and optionally add your email address between angle brackets (Example: `Name &lt;mail@example.org&gt;`) or your website (Example: `Name https://www.example.org/`). If names are already present, do not remove them and add yours on a new line, in alphabetical order.">translator-credits</property>
+		<property name="website">https://zap.romainvigier.fr/</property>
+		<property name="issue-url">https://gitlab.com/rmnvgr/zap/-/issues</property>
+		<property name="copyright">© 2022 Romain Vigier</property>
+		<property name="license-type">gpl-3-0</property>
+		<property name="hide-on-close">true</property>
+		<property name="modal">true</property>
+		<property name="transient-for">ZapWindow</property>
+	</object>
+	<menu id="main-menu">
+		<section>
+			<item>
+				<attribute name="label" translatable="yes">New Window</attribute>
+				<attribute name="action">app.new-window</attribute>
+			</item>
+		</section>
+		<section>
+			<item>
+				<attribute name="label" translatable="yes">Export Zaps…</attribute>
+				<attribute name="action">win.export</attribute>
+			</item>
+			<item>
+				<attribute name="label" translatable="yes">Import Zaps…</attribute>
+				<attribute name="action">win.import</attribute>
+			</item>
+		</section>
+		<section>
+			<item>
+				<attribute name="label" translatable="yes">Keyboard Shortcuts</attribute>
+				<attribute name="action">win.show-help-overlay</attribute>
+			</item>
+			<item>
+				<attribute name="label" translatable="yes">About Zap</attribute>
+				<attribute name="action">win.about</attribute>
+			</item>
+		</section>
+	</menu>
+</interface>

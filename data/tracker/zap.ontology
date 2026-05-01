@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix nrl: <http://tracker.api.gnome.org/ontology/v3/nrl#>.
+
+@prefix zap: <https://zap.romainvigier.fr#>.
+
+zap: a nrl:Namespace, nrl:Ontology;
+    nrl:prefix "zap";
+    rdfs:comment "Zap ontology";
+    nrl:lastModified "2022-09-06T00:00:00Z".
+
+zap:Item a rdfs:Class;
+    rdfs:subClassOf rdfs:Resource;
+    rdfs:comment "A base item".
+
+zap:uuid a rdf:Property, nrl:InverseFunctionalProperty;
+    rdfs:domain zap:Item;
+    rdfs:range xsd:string;
+    nrl:maxCardinality 1.
+
+zap:name a rdf:Property;
+    rdfs:domain zap:Item;
+    rdfs:range xsd:string;
+    nrl:maxCardinality 1.
+
+zap:Collection a rdfs:Class;
+    rdfs:subClassOf zap:Item;
+    rdfs:comment "A collection";
+    nrl:domainIndex zap:uuid.
+
+zap:Zap a rdfs:Class;
+    rdfs:subClassOf zap:Item;
+    rdfs:comment "A zap";
+    nrl:domainIndex zap:uuid.
+
+zap:collectionUuid a rdf:Property;
+    rdfs:domain zap:Zap;
+    rdfs:range xsd:string;
+    nrl:maxCardinality 1.
+
+zap:uri a rdf:Property;
+    rdfs:domain zap:Zap;
+    rdfs:range xsd:string;
+    nrl:maxCardinality 1.
+
+zap:color a rdf:Property;
+    rdfs:domain zap:Zap;
+    rdfs:range xsd:string;
+    nrl:maxCardinality 1.
+
+zap:loop a rdf:Property;
+    rdfs:domain zap:Zap;
+    rdfs:range xsd:boolean;
+    nrl:maxCardinality 1.
+
+zap:volume a rdf:Property;
+    rdfs:domain zap:Zap;
+    rdfs:range xsd:double;
+    nrl:maxCardinality 1.
+
+zap:position a rdf:Property;
+    rdfs:domain zap:Zap;
+    rdfs:range xsd:integer;
+    nrl:maxCardinality 1.

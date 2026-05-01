@@ -1,0 +1,43 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+zap-item.uuid-$uuid button.stop,
+zap-item.uuid-$uuid button.fadeout,
+zap-item.uuid-$uuid button.play,
+zap-item.uuid-$uuid button.loop,
+zap-item.uuid-$uuid menubutton.edit > button {
+	background-color: alpha($zap_color, 0.3);
+}
+
+zap-item.uuid-$uuid button.stop:hover,
+zap-item.uuid-$uuid button.fadeout:hover,
+zap-item.uuid-$uuid button.play:hover,
+zap-item.uuid-$uuid button.loop:hover,
+zap-item.uuid-$uuid menubutton.edit > button:hover {
+	background-color: alpha($zap_color, 0.2);
+}
+
+zap-item.uuid-$uuid button.stop:active,
+zap-item.uuid-$uuid button.fadeout:active,
+zap-item.uuid-$uuid button.play:active,
+zap-item.uuid-$uuid button.loop:active,
+zap-item.uuid-$uuid menubutton.edit > button:active {
+	background-color: alpha($zap_color, 0.35);
+}
+
+zap-item.uuid-$uuid button.loop:checked,
+zap-item.uuid-$uuid menubutton.edit > button:checked {
+	background-color: alpha($zap_color, 0.6);
+}
+
+zap-item.uuid-$uuid button.loop:checked:hover,
+zap-item.uuid-$uuid menubutton.edit > button:checked:hover {
+	background-color: alpha($zap_color, 0.5);
+}
+
+zap-item.uuid-$uuid progress-bar {
+	color: $zap_color;
+}

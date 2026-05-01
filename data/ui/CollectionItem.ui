@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
+<interface>
+	<template class="ZapCollectionItem">
+		<property name="layout-manager">
+			<object class="GtkBinLayout"/>
+		</property>
+		<signal name="unmap" handler="onHide"/>
+		<binding name="selected-collection">
+			<lookup name="selected-collection" type="ZapWindow">
+				<lookup name="root">ZapCollectionItem</lookup>
+			</lookup>
+		</binding>
+		<child>
+			<object class="GtkStack" id="stack">
+				<property name="transition-type">crossfade</property>
+				<child>
+					<object class="GtkStackPage">
+						<property name="name">view</property>
+						<property name="child">
+							<object class="GtkBox">
+								<child>
+									<object class="GtkButton">
+										<signal name="clicked" handler="onNameButtonClicked"/>
+										<property name="hexpand">true</property>
+										<style>
+											<class name="flat"/>
+											<class name="name"/>
+										</style>
+										<child>
+											<object class="GtkBox">
+												<property name="spacing">12</property>
+												<child>
+													<object class="GtkStack">
+														<property name="transition-type">crossfade</property>
+														<binding name="visible-child-name">
+															<closure type="gchararray" function="getPlayingStackVisiblePageName">
+																<lookup name="collection">ZapCollectionItem</lookup>
+																<lookup name="playing-zap">ZapCollectionItem</lookup>
+																<lookup name="playing" type="Zap">
+																	<lookup name="playing-zap">ZapCollectionItem</lookup>
+																</lookup>
+															</closure>
+														</binding>
+														<child>
+															<object class="GtkStackPage">
+																<property name="name">not-playing</property>
+																<property name="child">
+																	<object class="GtkBox"/>
+																</property>
+															</object>
+														</child>
+														<child>
+															<object class="GtkStackPage">
+																<property name="name">playing</property>
+																<property name="child">
+																	<object class="GtkImage">
+																		<property name="tooltip-text" translatable="yes">Playing</property>
+																		<property name="icon-name">fr.romainvigier.zap-playing-symbolic</property>
+																	</object>
+																</property>
+															</object>
+														</child>
+													</object>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<binding name="label">
+															<lookup name="name" type="ZapCollection">
+																<lookup name="collection">ZapCollectionItem</lookup>
+															</lookup>
+														</binding>
+														<property name="hexpand">true</property>
+													</object>
+												</child>
+											</object>
+										</child>
+									</object>
+								</child>
+								<child>
+									<object class="GtkButton">
+										<signal name="clicked" handler="onEditButtonClicked"/>
+										<property name="tooltip-text" translatable="yes">Edit</property>
+										<property name="icon-name">fr.romainvigier.zap-edit-symbolic</property>
+										<style>
+											<class name="flat"/>
+											<class name="edit"/>
+										</style>
+									</object>
+								</child>
+							</object>
+						</property>
+					</object>
+				</child>
+				<child>
+					<object class="GtkStackPage">
+						<property name="name">edit</property>
+						<property name="child">
+							<object class="GtkBox">
+								<style>
+									<class name="linked"/>
+								</style>
+								<child>
+									<object class="GtkButton">
+										<signal name="clicked" handler="onRemoveButtonClicked"/>
+										<property name="tooltip-text" translatable="yes">Remove</property>
+										<property name="icon-name">fr.romainvigier.zap-trash-symbolic</property>
+										<style>
+											<class name="destructive-action"/>
+										</style>
+									</object>
+								</child>
+								<child>
+									<object class="GtkEntry" id="nameEntry">
+										<signal name="activate" handler="onNameEntryActivated"/>
+										<property name="placeholder-text" translatable="yes">Name</property>
+										<property name="hexpand">true</property>
+									</object>
+								</child>
+								<child>
+									<object class="GtkButton">
+										<signal name="clicked" handler="onDoneButtonClicked"/>
+										<property name="tooltip-text" translatable="yes">Done</property>
+										<property name="icon-name">fr.romainvigier.zap-done-symbolic</property>
+										<binding name="sensitive">
+											<closure type="gboolean" function="validate">
+												<lookup name="text">nameEntry</lookup>
+											</closure>
+										</binding>
+									</object>
+								</child>
+							</object>
+						</property>
+					</object>
+				</child>
+			</object>
+		</child>
+	</template>
+</interface>

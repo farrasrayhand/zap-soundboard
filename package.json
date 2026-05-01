@@ -1,0 +1,11 @@
+{
+	"devDependencies": {
+		"@gi-types/adw1": "^1.1.1",
+		"@gi-types/base-types": "^1.0.0",
+		"@gi-types/gjs-environment": "^1.1.0",
+		"@gi-types/gst1": "^1.20.1",
+		"@gi-types/gtk4-types": "^1.0.0",
+		"eslint": "^8.24.0",
+		"eslint-plugin-jsdoc": "^39.3.6"
+	}
+}

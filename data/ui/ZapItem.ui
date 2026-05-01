@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
+<interface>
+	<template class="ZapZapItem">
+		<property name="layout-manager">
+			<object class="GtkBinLayout"/>
+		</property>
+		<property name="overflow">hidden</property>
+		<binding name="playing">
+			<lookup name="playing" type="Zap">
+				<lookup name="zap">ZapZapItem</lookup>
+			</lookup>
+		</binding>
+		<child>
+			<object class="ZapProgressBar">
+				<binding name="progress">
+					<lookup name="progress" type="Zap">
+						<lookup name="zap">ZapZapItem</lookup>
+					</lookup>
+				</binding>
+			</object>
+		</child>
+		<child>
+			<object class="GtkBox">
+				<child>
+					<object class="GtkRevealer" id="stopButtonRevealer">
+						<signal name="notify::child-revealed" handler="onStopButtonRevealChanged"/>
+						<property name="transition-type">slide-left</property>
+						<binding name="reveal-child">
+							<lookup name="playing" type="Zap">
+								<lookup name="zap">ZapZapItem</lookup>
+							</lookup>
+						</binding>
+						<property name="child">
+							<object class="GtkBox">
+								<property name="orientation">vertical</property>
+								<child>
+									<object class="GtkButton">
+										<signal name="clicked" handler="onStopButtonClicked"/>
+										<property name="tooltip-text" translatable="yes">Stop</property>
+										<property name="icon-name">fr.romainvigier.zap-stop-symbolic</property>
+										<style>
+											<class name="stop"/>
+										</style>
+									</object>
+								</child>
+								<child>
+									<object class="GtkButton">
+										<signal name="clicked" handler="onFadeOutButtonClicked"/>
+										<property name="tooltip-text" translatable="yes">Fade out</property>
+										<property name="icon-name">fr.romainvigier.zap-fadeout-symbolic</property>
+										<style>
+											<class name="fadeout"/>
+										</style>
+									</object>
+								</child>
+							</object>
+						</property>
+					</object>
+				</child>
+				<child>
+					<object class="GtkButton">
+						<signal name="clicked" handler="onPlayButtonClicked"/>
+						<property name="tooltip-text" translatable="yes">Play</property>
+						<property name="hexpand">true</property>
+						<property name="child">
+							<object class="GtkBox">
+								<property name="spacing">12</property>
+								<child>
+									<object class="GtkImage">
+										<property name="icon-name">fr.romainvigier.zap-play-symbolic</property>
+									</object>
+								</child>
+								<child>
+									<object class="GtkInscription" id="nameInscription">
+										<binding name="text">
+											<lookup name="name" type="Zap">
+												<lookup name="zap">ZapZapItem</lookup>
+											</lookup>
+										</binding>
+										<property name="text-overflow">ellipsize-end</property>
+										<property name="hexpand">true</property>
+										<property name="xalign">0</property>
+									</object>
+								</child>
+							</object>
+						</property>
+						<accessibility>
+							<relation name="labelled-by">nameInscription</relation>
+						</accessibility>
+						<style>
+							<class name="play"/>
+						</style>
+					</object>
+				</child>
+				<child>
+					<object class="GtkBox">
+						<property name="orientation">vertical</property>
+						<child>
+							<object class="GtkToggleButton">
+								<signal name="toggled" handler="onLoopButtonToggled"/>
+								<property name="tooltip-text" translatable="yes">Loop</property>
+								<property name="icon-name">fr.romainvigier.zap-repeat-symbolic</property>
+								<binding name="active">
+									<lookup name="loop" type="Zap">
+										<lookup name="zap">ZapZapItem</lookup>
+									</lookup>
+								</binding>
+								<style>
+									<class name="loop"/>
+								</style>
+							</object>
+						</child>
+						<child>
+							<object class="GtkMenuButton">
+								<property name="tooltip-text" translatable="yes">Edit</property>
+								<property name="icon-name">fr.romainvigier.zap-edit-symbolic</property>
+								<property name="popover">
+									<object class="ZapEditZapPopover">
+										<property name="zap" bind-source="ZapZapItem" bind-property="zap" bind-flags="sync-create"/>
+									</object>
+								</property>
+								<style>
+									<class name="edit"/>
+								</style>
+							</object>
+						</child>
+					</object>
+				</child>
+			</object>
+		</child>
+		<child>
+			<object class="GtkDragSource">
+				<signal name="prepare" handler="onDragPrepare"/>
+				<property name="actions">move</property>
+			</object>
+		</child>
+		<child>
+			<object class="GtkDropTarget">
+				<signal name="notify::value" handler="onDropValueChanged"/>
+				<signal name="drop" handler="onDrop"/>
+				<property name="actions">move</property>
+				<property name="formats">Zap</property>
+				<property name="preload">true</property>
+			</object>
+		</child>
+	</template>
+</interface>

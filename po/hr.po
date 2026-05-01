@@ -1,0 +1,252 @@
+# Croatian translation for Zap.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the fr.romainvigier.zap package.
+# Milo Ivir <mail@milotype.de>, 2022.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: fr.romainvigier.zap\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-08-14 08:41+0000\n"
+"PO-Revision-Date: 2022-12-16 16:17+0100\n"
+"Last-Translator: Milo Ivir <mail@milotype.de>\n"
+"Language-Team: \n"
+"Language: hr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);\n"
+"X-Generator: Poedit 3.0\n"
+
+#. Translators: Application name, avoid translating it!
+#: data/fr.romainvigier.zap.desktop:8 data/fr.romainvigier.zap.metainfo.xml:10
+#: data/ui/Window.ui:168 src/classes/Application.js:62
+msgid "Zap"
+msgstr "Zap"
+
+#. Translators: Generic application name.
+#. Translators: Search term to find this application.
+#: data/fr.romainvigier.zap.desktop:10 data/fr.romainvigier.zap.metainfo.xml:44
+msgid "Soundboard"
+msgstr "Ploča zvukova"
+
+#. Translators: Short description of the application.
+#: data/fr.romainvigier.zap.desktop:12 data/fr.romainvigier.zap.metainfo.xml:23
+msgid "Play sounds from a soundboard"
+msgstr "Sviraj zvukove s ploče zvukova"
+
+#. Translators: Search terms to find this application. Do NOT translate or localize the semicolons! The list MUST also end with a semicolon!
+#: data/fr.romainvigier.zap.desktop:19
+msgid "Audio;Effect;Player;Sound;Soundboard;Streaming;"
+msgstr "audio;efekt;player;zvuk;Soundboard;ploča zvukova;emitiranje;"
+
+#: data/fr.romainvigier.zap.metainfo.xml:26
+msgid ""
+"Play all your favorite sound effects! This handy soundboard makes your "
+"livestreams and videocasts more entertaining."
+msgstr ""
+"Sviraj sve svoje omiljene zvučne efekte! Ova praktična ploča zvukova čini "
+"tvoje prijenose uživo i emitiranja videa zabavnijima."
+
+#: data/fr.romainvigier.zap.metainfo.xml:27
+msgid ""
+"Import audio files, arrange them in collections and customize their "
+"appearance."
+msgstr "Uvezi audio datoteke, rasporedi ih u zbirke i prilagodi njihov izgled."
+
+#. Translators: Search term to find this application.
+#: data/fr.romainvigier.zap.metainfo.xml:36
+msgid "Audio"
+msgstr "Audio"
+
+#. Translators: Search term to find this application.
+#: data/fr.romainvigier.zap.metainfo.xml:38
+msgid "Effect"
+msgstr "Efekt"
+
+#. Translators: Search term to find this application.
+#: data/fr.romainvigier.zap.metainfo.xml:40
+msgid "Player"
+msgstr "Player"
+
+#. Translators: Search term to find this application.
+#: data/fr.romainvigier.zap.metainfo.xml:42
+msgid "Sound"
+msgstr "Zvuk"
+
+#. Translators: Search term to find this application.
+#: data/fr.romainvigier.zap.metainfo.xml:46
+msgid "Streaming"
+msgstr "Emitiranje"
+
+#: data/ui/AddZapPopup.ui:28 data/ui/Window.ui:137
+msgid "Add a Zap"
+msgstr "Dodaj Zap"
+
+#: data/ui/AddZapPopup.ui:36
+msgid "Close"
+msgstr "Zatvori"
+
+#: data/ui/AddZapPopup.ui:65 data/ui/AddZapPopup.ui:66
+#: data/ui/CollectionItem.ui:122 data/ui/CollectionsMenuButton.ui:97
+#: data/ui/EditZapPopover.ui:25 data/ui/EditZapPopover.ui:26
+msgid "Name"
+msgstr "Ime"
+
+#: data/ui/AddZapPopup.ui:68
+msgid "Clear"
+msgstr "Izprazni"
+
+#: data/ui/AddZapPopup.ui:77
+msgid "Add"
+msgstr "Dodaj"
+
+#: data/ui/CollectionItem.ui:64
+msgid "Playing"
+msgstr "Svira"
+
+#: data/ui/CollectionItem.ui:89 data/ui/ZapItem.ui:122
+msgid "Edit"
+msgstr "Uredi"
+
+#: data/ui/CollectionItem.ui:112 data/ui/EditZapPopover.ui:111
+msgid "Remove"
+msgstr "Ukloni"
+
+#: data/ui/CollectionItem.ui:129
+msgid "Done"
+msgstr "Gotovo"
+
+#: data/ui/CollectionsMenuButton.ui:104
+msgid "Add collection"
+msgstr "Dodaj zbirku"
+
+#: data/ui/EditZapPopover.ui:32 data/ui/EditZapPopover.ui:58
+msgid "Collection"
+msgstr "Zbirka"
+
+#: data/ui/EditZapPopover.ui:89
+msgid "Volume"
+msgstr "Glasnoća"
+
+#: data/ui/FileChooserButton.ui:33
+msgid "Select file…"
+msgstr "Odaberi datoteku …"
+
+#: data/ui/FileChooserButton.ui:74
+msgid "Choose an audio file"
+msgstr "Odaberi audio datoteku"
+
+#: data/ui/FileChooserButton.ui:81
+msgid "Audio files"
+msgstr "Audio datoteke"
+
+#: data/ui/ShortcutsWindow.ui:15
+msgid "Zap Management"
+msgstr "Zap upravljanje"
+
+#: data/ui/ShortcutsWindow.ui:18
+msgid "Open Add Zap Popup"
+msgstr "Otvori skočni prozor za dodavanje Zapa"
+
+#: data/ui/ShortcutsWindow.ui:24
+msgid "Open Collections Popover"
+msgstr "Otvori skočni prozor zbirki"
+
+#: data/ui/ShortcutsWindow.ui:32
+msgid "General"
+msgstr "Opće"
+
+#: data/ui/ShortcutsWindow.ui:35 data/ui/Window.ui:191
+msgid "New Window"
+msgstr "Novi prozor"
+
+#: data/ui/ShortcutsWindow.ui:41
+msgid "Close Window"
+msgstr "Zatvori prozor"
+
+#: data/ui/ShortcutsWindow.ui:47
+msgid "Quit Application"
+msgstr "Zatvori aplikaciju"
+
+#: data/ui/Window.ui:26
+msgid "Main Menu"
+msgstr "Glavni izbornik"
+
+#: data/ui/Window.ui:62
+msgid "Add Zaps to this collection by clicking the “+” button."
+msgstr "Dodaj Zapove ovoj zbirci pritiskom gumba „+”."
+
+#. Translators: Replace `translator-credits` by your name, and optionally add your email address between angle brackets (Example: `Name <mail@example.org>`) or your website (Example: `Name https://www.example.org/`). If names are already present, do not remove them and add yours on a new line, in alphabetical order.
+#: data/ui/Window.ui:179
+msgid "translator-credits"
+msgstr "Milo Ivir <mail@milotype.de>"
+
+#: data/ui/Window.ui:197
+msgid "Keyboard Shortcuts"
+msgstr "Tipkovni prečaci"
+
+#: data/ui/Window.ui:201
+msgid "About Zap"
+msgstr "Zap informacije"
+
+#: data/ui/ZapItem.ui:46
+msgid "Stop"
+msgstr "Prekini"
+
+#: data/ui/ZapItem.ui:56
+msgid "Fade out"
+msgstr "Postupno stišavanje"
+
+#: data/ui/ZapItem.ui:70
+msgid "Play"
+msgstr "Sviraj"
+
+#: data/ui/ZapItem.ui:108
+msgid "Loop"
+msgstr "Ponavljaj"
+
+#: src/enums/Color.js:24
+msgid "Gray"
+msgstr "Siva"
+
+#: src/enums/Color.js:32
+msgid "Red"
+msgstr "Crvena"
+
+#: src/enums/Color.js:40
+msgid "Orange"
+msgstr "Narančasta"
+
+#: src/enums/Color.js:48
+msgid "Green"
+msgstr "Zelena"
+
+#: src/enums/Color.js:56
+msgid "Blue"
+msgstr "Plava"
+
+#: src/enums/Color.js:64
+msgid "Purple"
+msgstr "Ljubičasta"
+
+#. Translators: Default collection name.
+#: src/services/Collections.js:183
+msgid "Zaps"
+msgstr "Zapovi"
+
+#. Translators: Name of a sample Zap
+#: src/services/Collections.js:188
+msgid "Theme Song 8-bit"
+msgstr "8-bitna pjesma"
+
+#. Translators: Name of a sample Zap
+#: src/services/Collections.js:196
+msgid "Applause"
+msgstr "Aplaus"
+
+#. Translators: Name of a sample Zap
+#: src/services/Collections.js:203
+msgid "Bark"
+msgstr "Lavež"

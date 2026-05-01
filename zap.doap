@@ -1,0 +1,39 @@
+<Project
+		xmlns="http://usefulinc.com/ns/doap#"
+		xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+		xmlns:foaf="http://xmlns.com/foaf/0.1/"
+		xmlns:gnome="http://api.gnome.org/doap-extensions#">
+
+	<name xml:lang="en">Zap</name>
+	<shortdesc xml:lang="en">Play sounds from a soundboard</shortdesc>
+
+	<homepage rdf:resource="https://zap.romainvigier.fr"/>
+	<download-page rdf:resource="https://flathub.org/apps/details/fr.romainvigier.zap"/>
+	<bug-database rdf:resource="https://gitlab.com/rmnvgr/zap/-/issues"/>
+
+	<programming-language>JavaScript</programming-language>
+	<platform>GTK 4</platform>
+	<platform>Libadwaita</platform>
+
+	<repository>
+		<GitRepository>
+			<location rdf:resource="https://gitlab.com/rmnvgr/zap.git"/>
+			<browse rdf:resource="https://gitlab.com/rmnvgr/zap"/>
+		</GitRepository>
+	</repository>
+
+	<maintainer>
+		<foaf:Person>
+			<foaf:name>Romain Vigier</foaf:name>
+			<foaf:homepage rdf:resource="https://www.romainvigier.fr/"/>
+			<foaf:mbox_sha1sum>5c53ca9b23b6db4803772c8ea03080d4284fe52b</foaf:mbox_sha1sum>
+			<gnome:userid>rvigier</gnome:userid>
+			<foaf:account>
+				<foaf:OnlineAccount>
+					<foaf:accountServiceHomepage rdf:resource="https://gitlab.com"/>
+					<foaf:accountName>rmnvgr</foaf:accountName>
+				</foaf:OnlineAccount>
+			</foaf:account>
+		</foaf:Person>
+	</maintainer>
+</Project>

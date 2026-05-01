@@ -1,0 +1,177 @@
+# SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+variables:
+  APP_ID: fr.romainvigier.zap
+  MANIFEST: build-aux/fr.romainvigier.zap.yaml
+  PACKAGE_REGISTRY_URL: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/zap
+
+workflow:
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+stages:
+  - check
+  - tasks
+  - build
+  - deploy
+
+.python:
+  image: python:latest
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    key: python
+    paths:
+      - .cache/pip
+      - venv/
+  before_script:
+    - python -V
+    - pip install virtualenv
+    - virtualenv venv
+    - source venv/bin/activate
+
+reuse:
+  image:
+    name: fsfe/reuse:latest
+    entrypoint: [""]
+  stage: check
+  interruptible: true
+  script:
+    - reuse lint
+
+eslint:
+  image: node:latest
+  stage: check
+  interruptible: true
+  rules:
+    - changes:
+      - src/**/*.js
+  before_script:
+    - npm install eslint
+  script:
+    - npx eslint --format junit --output-file eslint.xml ./src/**/*.js
+  artifacts:
+    paths:
+      - eslint.xml
+    reports:
+      junit: eslint.xml
+
+translations:
+  image: freedesktopsdk/sdk:22.08
+  stage: tasks
+  needs:
+    - job: reuse
+    - job: eslint
+      artifacts: false
+      optional: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - data/**/*.desktop
+        - data/**/*.ui
+        - data/**/*.gschema.xml
+        - data/**/*.metainfo.xml
+        - po/LINGUAS
+        - po/POTFILES
+        - src/**/*.js
+  before_script:
+    - git config --global user.email "no-contact@romainvigier.fr"
+    - git config --global user.name "Translation Bot"
+    - git remote set-url origin "https://bot-access-token:${BOT_GITLAB_ACCESS_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+  script:
+    - meson builddir
+    - meson compile -C builddir ${APP_ID}-pot
+    - meson compile -C builddir ${APP_ID}-update-po
+  after_script:
+    - git status
+    - |
+      if [[ -n $(git status --porcelain) ]]; then
+        git add .
+        git commit -m "Translations: Update translation files"
+      fi
+    - git push -o ci.skip origin HEAD:main
+
+# flatpak:repo:
+#   image: freedesktopsdk/flatpak:22.08
+#   stage: build
+#   interruptible: true
+#   needs:
+#     - job: reuse
+#       optional: true
+#     - job: eslint
+#       optional: true
+#       artifacts: false
+#   before_script:
+#     - flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+#   script:
+#     - flatpak-builder --install-deps-from=flathub --repo=repo --default-branch=$CI_COMMIT_REF_SLUG builddir $MANIFEST
+#   artifacts:
+#     name: $CI_PROJECT_NAME-$CI_COMMIT_REF_SLUG-flatpak-repo
+#     paths:
+#       - repo
+#     expire_in: 1 day
+
+# flatpak:app:
+#   image: freedesktopsdk/flatpak:22.08
+#   stage: build
+#   interruptible: true
+#   needs:
+#     - job: flatpak:repo
+#       artifacts: true
+#   script:
+#     - flatpak build-bundle ./repo $APP_ID.flatpak $APP_ID $CI_COMMIT_REF_SLUG
+#   artifacts:
+#     name: $CI_PROJECT_NAME-$CI_COMMIT_REF_SLUG-flatpak
+#     expose_as: Flatpak bundle
+#     paths:
+#       - fr.romainvigier.zap.flatpak
+#     expire_in: 1 day
+
+# flatpak:debug:
+#   image: freedesktopsdk/flatpak:22.08
+#   stage: build
+#   interruptible: true
+#   needs:
+#     - job: flatpak:repo
+#       artifacts: true
+#   script:
+#     - flatpak build-bundle --runtime ./repo $APP_ID.Debug.flatpak $APP_ID.Debug $CI_COMMIT_REF_SLUG
+#   artifacts:
+#     name: $CI_PROJECT_NAME-$CI_COMMIT_REF_SLUG-flatpak-debug
+#     expose_as: Flatpak debug symbols
+#     paths:
+#       - fr.romainvigier.zap.Debug.flatpak
+#     expire_in: 1 day
+
+release:prepare:
+  extends: .python
+  stage: deploy
+  needs:
+    - reuse
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - ./build-aux/get_release_notes.py $CI_COMMIT_TAG > release-notes.md
+  artifacts:
+    paths:
+      - release-notes.md
+    expire_in: 1 day
+
+release:publish:
+  stage: deploy
+  needs:
+    - job: release:prepare
+      artifacts: true
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - echo "Creating release for version $CI_COMMIT_TAG"
+  release:
+    name: Version $CI_COMMIT_TAG
+    tag_name: $CI_COMMIT_TAG
+    description: release-notes.md

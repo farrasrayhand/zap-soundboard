@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+app-id: fr.romainvigier.zap
+default-branch: develop
+runtime: org.gnome.Platform
+runtime-version: '43'
+sdk: org.gnome.Sdk
+command: fr.romainvigier.zap
+separate-locales: false
+
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --device=dri
+  - --socket=pulseaudio
+  - --env=G_MESSAGES_DEBUG=all
+
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /share/doc
+  - /share/man
+  - '*.a'
+  - '*.la'
+
+modules:
+
+  - name: zap
+    buildsystem: meson
+    config-opts:
+      - -Ddevel=true
+    sources:
+      - type: dir
+        path: ..

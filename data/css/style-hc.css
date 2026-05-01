@@ -1,0 +1,21 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+zap-item {
+	box-shadow: 0 0 0 1px inset @borders;
+}
+
+zap-item button.stop,
+zap-item button.fadeout,
+zap-item button.play,
+zap-item button.loop,
+zap-item menubutton.edit > button {
+	box-shadow: none;
+}
+
+collection-item.selected {
+	box-shadow: 0 0 0 1px inset @borders;
+}

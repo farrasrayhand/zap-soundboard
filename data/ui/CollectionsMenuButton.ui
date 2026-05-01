@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
+<interface>
+	<template class="ZapCollectionsMenuButton">
+		<property name="layout-manager">
+			<object class="GtkBinLayout"/>
+		</property>
+		<binding name="selected-collection">
+			<lookup name="selected-collection" type="ZapWindow">
+				<lookup name="root">ZapCollectionsMenuButton</lookup>
+			</lookup>
+		</binding>
+		<binding name="collections">
+			<lookup name="collections" type="ZapWindow">
+				<lookup name="root">ZapCollectionsMenuButton</lookup>
+			</lookup>
+		</binding>
+		<child>
+			<object class="GtkMenuButton" id="button">
+				<style>
+					<class name="flat"/>
+				</style>
+				<child>
+					<object class="GtkBox">
+						<property name="spacing">6</property>
+						<child>
+							<object class="GtkLabel">
+								<binding name="label">
+									<lookup name="name" type="ZapCollection">
+										<lookup name="selected-collection">ZapCollectionsMenuButton</lookup>
+									</lookup>
+								</binding>
+								<property name="ellipsize">end</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkImage">
+								<property name="icon-name">fr.romainvigier.zap-open-down-symbolic</property>
+							</object>
+						</child>
+					</object>
+				</child>
+				<property name="popover">
+					<object class="GtkPopover">
+						<property name="child">
+							<object class="GtkBox">
+								<property name="orientation">vertical</property>
+								<property name="spacing">6</property>
+								<child>
+									<object class="GtkScrolledWindow">
+										<property name="hscrollbar-policy">never</property>
+										<property name="propagate-natural-height">true</property>
+										<property name="child">
+											<object class="GtkListView">
+												<property name="model">
+													<object class="GtkNoSelection">
+														<property name="model">
+															<object class="GtkSortListModel">
+																<property name="model" bind-source="ZapCollectionsMenuButton" bind-property="collections" bind-flags="sync-create"/>
+																<property name="sorter">
+																	<object class="GtkStringSorter">
+																		<property name="expression">
+																			<lookup name="name" type="Zap"/>
+																		</property>
+																	</object>
+																</property>
+															</object>
+														</property>
+													</object>
+												</property>
+												<property name="factory">
+													<object class="GtkBuilderListItemFactory">
+														<property name="resource">/fr/romainvigier/zap/ui/CollectionListItem.ui</property>
+													</object>
+												</property>
+												<style>
+													<class name="collections"/>
+												</style>
+											</object>
+										</property>
+									</object>
+								</child>
+								<child>
+									<object class="GtkBox">
+										<style>
+											<class name="linked"/>
+										</style>
+										<child>
+											<object class="GtkEntry" id="addCollectionNameEntry">
+												<signal name="activate" handler="onAddCollectionNameEntryActivated"/>
+												<property name="placeholder-text" translatable="yes">Name</property>
+												<property name="hexpand">true</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkButton">
+												<signal name="clicked" handler="onAddCollectionButtonClicked"/>
+												<property name="tooltip-text" translatable="yes">Add collection</property>
+												<property name="icon-name">fr.romainvigier.zap-add-symbolic</property>
+												<property name="sensitive">false</property>
+												<binding name="sensitive">
+													<closure type="gboolean" function="validate">
+														<lookup name="text">addCollectionNameEntry</lookup>
+													</closure>
+												</binding>
+											</object>
+										</child>
+									</object>
+								</child>
+							</object>
+						</property>
+					</object>
+				</property>
+			</object>
+		</child>
+	</template>
+</interface>

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
+<interface>
+	<template class="ZapEditZapPopover" parent="GtkPopover">
+		<signal name="notify::zap" handler="onZapChanged"/>
+		<binding name="collections">
+			<lookup name="collections" type="ZapWindow">
+				<lookup name="root">ZapEditZapPopover</lookup>
+			</lookup>
+		</binding>
+		<property name="child">
+			<object class="GtkBox">
+				<property name="orientation">vertical</property>
+				<property name="spacing">6</property>
+				<child>
+					<object class="GtkEntry" id="nameEntry">
+						<signal name="changed" handler="onNameEntryChanged"/>
+						<signal name="activate" handler="onNameEntryActivated"/>
+						<property name="placeholder-text" translatable="yes">Name</property>
+						<property name="tooltip-text" translatable="yes">Name</property>
+					</object>
+				</child>
+				<child>
+					<object class="GtkDropDown" id="collectionDropDown">
+						<signal name="notify::selected-item" handler="onCollectionDropDownSelectedItemChanged"/>
+						<property name="tooltip-text" translatable="yes">Collection</property>
+						<property name="enable-search">true</property>
+						<property name="model">
+							<object class="GtkSortListModel">
+								<binding name="model">
+									<lookup name="collections">ZapEditZapPopover</lookup>
+								</binding>
+								<property name="sorter">
+									<object class="GtkStringSorter">
+										<property name="expression">
+											<lookup name="name" type="ZapCollection"/>
+										</property>
+									</object>
+								</property>
+							</object>
+						</property>
+						<property name="expression">
+							<lookup name="name" type="ZapCollection"/>
+						</property>
+						<binding name="selected">
+							<closure type="guint" function="getZapCollection">
+								<constant>collectionDropDown</constant>
+								<lookup name="zap">ZapEditZapPopover</lookup>
+							</closure>
+						</binding>
+						<accessibility>
+							<property name="label" translatable="yes">Collection</property>
+						</accessibility>
+					</object>
+				</child>
+				<child>
+					<object class="ZapColorChooser">
+						<signal name="notify::color" handler="onColorChanged"/>
+						<binding name="color">
+							<lookup name="color" type="Zap">
+								<lookup name="zap">ZapEditZapPopover</lookup>
+							</lookup>
+						</binding>
+					</object>
+				</child>
+				<child>
+					<object class="GtkBox">
+						<child>
+							<object class="GtkImage">
+								<binding name="icon-name">
+									<closure type="gchararray" function="getVolumeIcon">
+										<lookup name="volume" type="Zap">
+											<lookup name="zap">ZapEditZapPopover</lookup>
+										</lookup>
+									</closure>
+								</binding>
+							</object>
+						</child>
+						<child>
+							<object class="GtkScale">
+								<signal name="value-changed" handler="onVolumeChanged"/>
+								<property name="round-digits">4</property>
+								<property name="tooltip-text" translatable="yes">Volume</property>
+								<property name="hexpand">true</property>
+								<property name="adjustment">
+									<object class="GtkAdjustment">
+										<property name="lower">0</property>
+										<property name="upper">1</property>
+										<property name="page-increment">0.1</property>
+										<property name="step-increment">0.1</property>
+										<binding name="value">
+											<lookup name="volume" type="Zap">
+												<lookup name="zap">ZapEditZapPopover</lookup>
+											</lookup>
+										</binding>
+									</object>
+								</property>
+							</object>
+						</child>
+					</object>
+				</child>
+				<child>
+					<object class="GtkButton">
+						<signal name="clicked" handler="onRemoveButtonClicked"/>
+						<property name="label" translatable="yes">Remove</property>
+						<style>
+							<class name="destructive-action"/>
+						</style>
+					</object>
+				</child>
+			</object>
+		</property>
+	</template>
+</interface>

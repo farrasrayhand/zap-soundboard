@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
+<schemalist>
+	<schema id="fr.romainvigier.zap" path="/fr/romainvigier/zap/">
+		<key name="window-width" type="u">
+			<default>240</default>
+		</key>
+		<key name="window-height" type="u">
+			<default>360</default>
+		</key>
+		<key name="window-maximized" type="b">
+			<default>false</default>
+		</key>
+		<key name="last-selected-collection" type="s">
+			<default>""</default>
+		</key>
+	</schema>
+</schemalist>

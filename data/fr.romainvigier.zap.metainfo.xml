@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<component type="desktop-application" xmlns:its="http://www.w3.org/2005/11/its">
+  <id>fr.romainvigier.zap</id>
+
+  <!-- Translators: Application name, avoid translating it! -->
+  <name>Zap</name>
+
+  <metadata_license>CC-BY-SA-4.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+
+  <developer_name its:translate="no">Romain Vigier</developer_name>
+
+  <url type="homepage">https://zap.romainvigier.fr</url>
+  <url type="bugtracker">https://gitlab.com/rmnvgr/zap/-/issues</url>
+  <url type="translate">https://gitlab.com/rmnvgr/zap/-/blob/main/CONTRIBUTING.md#translations</url>
+  <url type="vcs-browser">https://gitlab.com/rmnvgr/zap/</url>  
+
+  <!-- Translators: Short description of the application. -->
+  <summary>Play sounds from a soundboard</summary>
+
+  <description>
+    <p>Play all your favorite sound effects! This handy soundboard makes your livestreams and videocasts more entertaining.</p>
+    <p>Import audio files, arrange them in collections and customize their appearance.</p>
+  </description>
+
+  <categories>
+    <category>Audio</category>
+  </categories>
+
+  <keywords>
+    <!-- Translators: Search term to find this application. -->
+    <keyword>Audio</keyword>
+    <!-- Translators: Search term to find this application. -->
+    <keyword>Effect</keyword>
+    <!-- Translators: Search term to find this application. -->
+    <keyword>Player</keyword>
+    <!-- Translators: Search term to find this application. -->
+    <keyword>Sound</keyword>
+    <!-- Translators: Search term to find this application. -->
+    <keyword>Soundboard</keyword>
+    <!-- Translators: Search term to find this application. -->
+    <keyword>Streaming</keyword>
+  </keywords>
+
+  <screenshots>
+    <screenshot type="default">
+      <image>https://zap.romainvigier.fr/screenshots/1.png</image>
+    </screenshot>
+    <screenshot>
+      <image>https://zap.romainvigier.fr/screenshots/2.png</image>
+    </screenshot>
+  </screenshots>
+
+  <branding>
+    <color type="primary">#f8e45c</color>
+  </branding>
+
+  <launchable type="desktop-id">fr.romainvigier.zap.desktop</launchable>
+
+  <provides>
+    <binary>fr.romainvigier.zap</binary>
+    <dbus type="user">fr.romainvigier.zap.Collections</dbus>
+    <dbus type="user">fr.romainvigier.zap.Zaps</dbus>
+  </provides>
+
+  <translation type="gettext">fr.romainvigier.zap</translation>
+
+  <content_rating type="oars-1.1" />
+
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>touch</control>
+    <display_length compare="ge">xsmall</display_length>
+    <display_length compare="le">xlarge</display_length>
+  </supports>
+
+  <recommends>
+    <display_length compare="gt">xsmall</display_length>
+    <display_length compare="lt">xlarge</display_length>
+  </recommends>
+
+  <requires>
+    <internet>offline-only</internet>
+  </requires>
+
+  <releases>
+    <release version="1.2.3" date="2022-11-17">
+      <url>https://gitlab.com/rmnvgr/zap/-/releases/1.2.2</url>
+    </release>
+    <release version="1.2.2" date="2022-11-03">
+      <url>https://gitlab.com/rmnvgr/zap/-/releases/1.2.2</url>
+    </release>
+    <release version="1.2.1" date="2022-10-15">
+      <url>https://gitlab.com/rmnvgr/zap/-/releases/1.2.1</url>
+    </release>
+    <release version="1.2.0" date="2022-10-15">
+      <url>https://gitlab.com/rmnvgr/zap/-/releases/1.2.0</url>
+    </release>
+    <release version="1.1.0" date="2022-10-06">
+      <url>https://gitlab.com/rmnvgr/zap/-/releases/1.1.0</url>
+    </release>
+    <release version="1.0.0" date="2022-09-30">
+      <url>https://gitlab.com/rmnvgr/zap/-/releases/1.0.0</url>
+    </release>
+  </releases>
+</component>

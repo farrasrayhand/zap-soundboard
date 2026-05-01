@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+[Desktop Entry]
+# Translators: Application name, avoid translating it!
+Name=Zap
+# Translators: Generic application name.
+GenericName=Soundboard
+# Translators: Short description of the application.
+Comment=Play sounds from a soundboard
+Icon=@APP_ID@
+Exec=@BINDIR@/@APP_ID@
+Type=Application
+Categories=Audio;
+# Translators: Search terms to find this application. Do NOT translate or localize the semicolons! The list MUST also end with a semicolon!
+Keywords=Audio;Effect;Player;Sound;Soundboard;Streaming;

@@ -1,0 +1,254 @@
+# Spain spanish translations for fr.romainvigier.zap package
+# Traducción a español de España para fr.romainvigier.zap package
+# Copyright (C) 2022 THE fr.romainvigier.zap'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the fr.romainvigier.zap package.
+# Daniel Darias <dariasteam94@gmail.com>, 2022.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: fr.romainvigier.zap\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-08-14 08:41+0000\n"
+"PO-Revision-Date: 2022-11-13 05:04+0000\n"
+"Last-Translator: Daniel Darias <dariasteam94@gmail.com>\n"
+"Language-Team: Spanish - Spain <dariasteam94@gmail.com>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"X-Generator: Gtranslator 42.0\n"
+
+#. Translators: Application name, avoid translating it!
+#: data/fr.romainvigier.zap.desktop:8 data/fr.romainvigier.zap.metainfo.xml:10
+#: data/ui/Window.ui:168 src/classes/Application.js:62
+msgid "Zap"
+msgstr "Zap"
+
+#. Translators: Generic application name.
+#. Translators: Search term to find this application.
+#: data/fr.romainvigier.zap.desktop:10 data/fr.romainvigier.zap.metainfo.xml:44
+msgid "Soundboard"
+msgstr "Mesa de sonido"
+
+#. Translators: Short description of the application.
+#: data/fr.romainvigier.zap.desktop:12 data/fr.romainvigier.zap.metainfo.xml:23
+msgid "Play sounds from a soundboard"
+msgstr "Reproduce sonidos de una mesa de sonidos"
+
+#. Translators: Search terms to find this application. Do NOT translate or localize the semicolons! The list MUST also end with a semicolon!
+#: data/fr.romainvigier.zap.desktop:19
+msgid "Audio;Effect;Player;Sound;Soundboard;Streaming;"
+msgstr "Audio;Efecto;Reroductor;Sonido;Mesa de sonido;Transmisión;"
+
+#: data/fr.romainvigier.zap.metainfo.xml:26
+msgid ""
+"Play all your favorite sound effects! This handy soundboard makes your "
+"livestreams and videocasts more entertaining."
+msgstr ""
+"Reproduce todos tus efectos de sonido favoritos! Esta útil mesa de sonido "
+"hace tus transmisiones en vivo y videocasts más entretenidas."
+
+#: data/fr.romainvigier.zap.metainfo.xml:27
+msgid ""
+"Import audio files, arrange them in collections and customize their "
+"appearance."
+msgstr ""
+"Importe achivos de audio, organízelos en colecciones y personalice su "
+"apariencia."
+
+#. Translators: Search term to find this application.
+#: data/fr.romainvigier.zap.metainfo.xml:36
+msgid "Audio"
+msgstr "Audio"
+
+#. Translators: Search term to find this application.
+#: data/fr.romainvigier.zap.metainfo.xml:38
+msgid "Effect"
+msgstr "Efecto"
+
+#. Translators: Search term to find this application.
+#: data/fr.romainvigier.zap.metainfo.xml:40
+msgid "Player"
+msgstr "Reprodutor"
+
+#. Translators: Search term to find this application.
+#: data/fr.romainvigier.zap.metainfo.xml:42
+msgid "Sound"
+msgstr "Sonido"
+
+#. Translators: Search term to find this application.
+#: data/fr.romainvigier.zap.metainfo.xml:46
+msgid "Streaming"
+msgstr "Transmisión"
+
+#: data/ui/AddZapPopup.ui:28 data/ui/Window.ui:137
+msgid "Add a Zap"
+msgstr "Añadir un Zap"
+
+#: data/ui/AddZapPopup.ui:36
+msgid "Close"
+msgstr "Cerrar"
+
+#: data/ui/AddZapPopup.ui:65 data/ui/AddZapPopup.ui:66
+#: data/ui/CollectionItem.ui:122 data/ui/CollectionsMenuButton.ui:97
+#: data/ui/EditZapPopover.ui:25 data/ui/EditZapPopover.ui:26
+msgid "Name"
+msgstr "Nombre"
+
+#: data/ui/AddZapPopup.ui:68
+msgid "Clear"
+msgstr "Limpar"
+
+#: data/ui/AddZapPopup.ui:77
+msgid "Add"
+msgstr "Añadir"
+
+#: data/ui/CollectionItem.ui:64
+msgid "Playing"
+msgstr "Reproduciendo"
+
+#: data/ui/CollectionItem.ui:89 data/ui/ZapItem.ui:122
+msgid "Edit"
+msgstr "Editar"
+
+#: data/ui/CollectionItem.ui:112 data/ui/EditZapPopover.ui:111
+msgid "Remove"
+msgstr "Eliminar"
+
+#: data/ui/CollectionItem.ui:129
+msgid "Done"
+msgstr "Hecho"
+
+#: data/ui/CollectionsMenuButton.ui:104
+msgid "Add collection"
+msgstr "Añadir colección"
+
+#: data/ui/EditZapPopover.ui:32 data/ui/EditZapPopover.ui:58
+msgid "Collection"
+msgstr "Colección"
+
+#: data/ui/EditZapPopover.ui:89
+msgid "Volume"
+msgstr "Volumen"
+
+#: data/ui/FileChooserButton.ui:33
+msgid "Select file…"
+msgstr "Seleccionar archivo…"
+
+#: data/ui/FileChooserButton.ui:74
+msgid "Choose an audio file"
+msgstr "Elige un archivo de audio"
+
+#: data/ui/FileChooserButton.ui:81
+msgid "Audio files"
+msgstr "Archivos de audio"
+
+#: data/ui/ShortcutsWindow.ui:15
+msgid "Zap Management"
+msgstr "Gestión de zaps"
+
+#: data/ui/ShortcutsWindow.ui:18
+msgid "Open Add Zap Popup"
+msgstr "Abre el pop-up de añadir zaps"
+
+#: data/ui/ShortcutsWindow.ui:24
+msgid "Open Collections Popover"
+msgstr "Abre el popover de colecciones"
+
+#: data/ui/ShortcutsWindow.ui:32
+msgid "General"
+msgstr "General"
+
+#: data/ui/ShortcutsWindow.ui:35 data/ui/Window.ui:191
+msgid "New Window"
+msgstr "Nueva ventana"
+
+#: data/ui/ShortcutsWindow.ui:41
+msgid "Close Window"
+msgstr "Cerrar ventana"
+
+#: data/ui/ShortcutsWindow.ui:47
+msgid "Quit Application"
+msgstr "Cerrar aplicación"
+
+#: data/ui/Window.ui:26
+msgid "Main Menu"
+msgstr "Menú principal"
+
+#: data/ui/Window.ui:62
+msgid "Add Zaps to this collection by clicking the “+” button."
+msgstr "Añada zaps a esta colección clicando el botón “+”."
+
+#. Translators: Replace `translator-credits` by your name, and optionally add your email address between angle brackets (Example: `Name <mail@example.org>`) or your website (Example: `Name https://www.example.org/`). If names are already present, do not remove them and add yours on a new line, in alphabetical order.
+#: data/ui/Window.ui:179
+msgid "translator-credits"
+msgstr "Daniel Darias <dariasteam94@gmail.com>"
+
+#: data/ui/Window.ui:197
+msgid "Keyboard Shortcuts"
+msgstr "Atajos de teclado"
+
+#: data/ui/Window.ui:201
+msgid "About Zap"
+msgstr "Acerca de Zap"
+
+#: data/ui/ZapItem.ui:46
+msgid "Stop"
+msgstr "Parar"
+
+#: data/ui/ZapItem.ui:56
+msgid "Fade out"
+msgstr "Fade out"
+
+#: data/ui/ZapItem.ui:70
+msgid "Play"
+msgstr "Reproducir"
+
+#: data/ui/ZapItem.ui:108
+msgid "Loop"
+msgstr "Loop"
+
+#: src/enums/Color.js:24
+msgid "Gray"
+msgstr "Gris"
+
+#: src/enums/Color.js:32
+msgid "Red"
+msgstr "Rojo"
+
+#: src/enums/Color.js:40
+msgid "Orange"
+msgstr "Naranja"
+
+#: src/enums/Color.js:48
+msgid "Green"
+msgstr "Verde"
+
+#: src/enums/Color.js:56
+msgid "Blue"
+msgstr "Azul"
+
+#: src/enums/Color.js:64
+msgid "Purple"
+msgstr "Púrpura"
+
+#. Translators: Default collection name.
+#: src/services/Collections.js:183
+msgid "Zaps"
+msgstr "Zaps"
+
+#. Translators: Name of a sample Zap
+#: src/services/Collections.js:188
+msgid "Theme Song 8-bit"
+msgstr "Música de 8 bits"
+
+#. Translators: Name of a sample Zap
+#: src/services/Collections.js:196
+msgid "Applause"
+msgstr "Aplausos"
+
+#. Translators: Name of a sample Zap
+#: src/services/Collections.js:203
+msgid "Bark"
+msgstr "Ladrido"
