@@ -4,10 +4,14 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'gi://Adw?version=1';
+import 'gi://Gdk?version=4.0';
+import 'gi://Gtk?version=4.0';
+
 import GLib from 'gi://GLib';
 import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';
-import Gtk from 'gi://Gtk?version=4.0';
+import Gtk from 'gi://Gtk';
 import system from 'system';
 
 
@@ -24,48 +28,43 @@ try {
     const scriptFile = Gio.File.new_for_path(system.programInvocationName);
     const buildSrcDir = scriptFile.get_parent();
     const buildRoot = buildSrcDir.get_parent();
-    const sourceRoot = buildRoot.get_parent(); // /home/br3ad/Projects/zap
+    const sourceRoot = buildRoot.get_parent();
 
-    // Register Resources
-    const registeredPaths = new Set();
-    const searchDirs = [buildSrcDir, buildRoot];
-
-    const enumerator = buildRoot.enumerate_children('standard::name,standard::type', Gio.FileQueryInfoFlags.NONE, null);
-    let info;
-    while ((info = enumerator.next_file(null)) !== null) {
-        if (info.get_file_type() === Gio.FileType.DIRECTORY) {
-            searchDirs.push(buildRoot.get_child(info.get_name()));
-        }
-    }
-
-    for (const dir of searchDirs) {
-        if (!dir.query_exists(null)) continue;
-        const dirEnumerator = dir.enumerate_children('standard::name', Gio.FileQueryInfoFlags.NONE, null);
-        let fileInfo;
-        while ((fileInfo = dirEnumerator.next_file(null)) !== null) {
-            const name = fileInfo.get_name();
+    // Register Resources once
+    const registered = new Set();
+    [buildSrcDir, buildRoot.get_child('data')].forEach(dir => {
+        if (!dir.query_exists(null)) return;
+        const enumerator = dir.enumerate_children('standard::name', Gio.FileQueryInfoFlags.NONE, null);
+        let info;
+        while ((info = enumerator.next_file(null)) !== null) {
+            const name = info.get_name();
             if (name.endsWith('.gresource')) {
-                const resourceFile = dir.get_child(name);
-                const path = resourceFile.get_path();
-                if (!registeredPaths.has(path)) {
+                const resFile = dir.get_child(name);
+                const path = resFile.get_path();
+                if (!registered.has(path)) {
                     const resource = Gio.Resource.load(path);
                     Gio.resources_register(resource);
-                    registeredPaths.add(path);
+                    registered.add(path);
                 }
             }
         }
-    }
+    });
 
-    // Register Icons Path
-    const iconTheme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default());
+    // Register Icons Path (Must be done after display is available, but Gtk.init usually handles this)
     const localIcons = sourceRoot.get_child('data').get_child('icons');
     if (localIcons.query_exists(null)) {
-        iconTheme.add_search_path(localIcons.get_path());
+        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            const display = Gdk.Display.get_default();
+            if (display) {
+                const iconTheme = Gtk.IconTheme.get_for_display(display);
+                iconTheme.add_search_path(localIcons.get_path());
+            }
+            return GLib.SOURCE_REMOVE;
+        });
     }
 
 } catch (e) {
 }
-
 imports.package.initGettext(); // eslint-disable-line no-restricted-globals
 const loop = new GLib.MainLoop(null, false);
 import('resource:///fr/romainvigier/zap/js/main.js')

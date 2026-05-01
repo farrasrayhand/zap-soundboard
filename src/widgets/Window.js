@@ -13,6 +13,7 @@ import { Zap } from '../classes/Zap.js';
 
 import { AddZapPopup } from './AddZapPopup.js';
 import { CollectionsMenuButton } from './CollectionsMenuButton.js';
+import { PreferencesWindow } from './PreferencesWindow.js';
 import { ZapGroupSeparator } from './ZapGroupSeparator.js';
 import { ZapItem } from './ZapItem.js';
 
@@ -270,6 +271,19 @@ export class Window extends Adw.ApplicationWindow {
                 parameterType: null,
                 callback: () => {
                     this.#addGroup();
+                },
+            },
+            {
+                name: 'show-preferences',
+                parameterType: null,
+                callback: () => {
+                    console.debug('Action: show-preferences triggered');
+                    try {
+                        const prefs = new PreferencesWindow({ transient_for: this });
+                        prefs.present();
+                    } catch (e) {
+                        console.error('Failed to open Preferences:', e.message);
+                    }
                 },
             },
         ].forEach(({ name, parameterType, callback }) => {

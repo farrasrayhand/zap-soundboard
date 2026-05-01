@@ -29,6 +29,7 @@ import { ColorChooser } from './widgets/ColorChooser.js';
 import { ColorPill } from './widgets/ColorPill.js';
 import { EditZapPopover } from './widgets/EditZapPopover.js';
 import { FileChooserButton } from './widgets/FileChooserButton.js';
+import { PreferencesWindow } from './widgets/PreferencesWindow.js';
 import { ProgressBar } from './widgets/ProgressBar.js';
 import { Window } from './widgets/Window.js';
 import { ZapGroupSeparator } from './widgets/ZapGroupSeparator.js';
@@ -54,6 +55,7 @@ function registerGObjects() {
     GObject.type_ensure(FileChooserButton);
     GObject.type_ensure(Group);
     GObject.type_ensure(Player);
+    GObject.type_ensure(PreferencesWindow);
     GObject.type_ensure(ProgressBar);
     GObject.type_ensure(Service);
     GObject.type_ensure(Window);

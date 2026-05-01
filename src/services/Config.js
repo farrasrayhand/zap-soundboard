@@ -31,7 +31,10 @@ export class Config extends Service {
         soundsDir.make_directory(null);
 
         const metadata = {
-            version: 2, // Incremented version
+            version: 2,
+            settings: {
+                safetyMode: globalThis.settings.get_boolean('safety-mode'),
+            },
             collections: [],
             groups: [],
             zaps: [],
@@ -144,6 +147,13 @@ export class Config extends Service {
 
             const [ok, contents] = metadataFile.load_contents(null);
             const metadata = JSON.parse(new TextDecoder().decode(contents));
+
+            // Import Application Settings
+            if (metadata.settings) {
+                if (metadata.settings.safetyMode !== undefined) {
+                    globalThis.settings.set_boolean('safety-mode', metadata.settings.safetyMode);
+                }
+            }
 
             const colMap = new Map(); // Old Collection UUID -> New Collection Object
 

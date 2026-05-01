@@ -20,5 +20,8 @@ SPDX-License-Identifier: GPL-3.0-or-later
 		<key name="last-selected-collection" type="s">
 			<default>""</default>
 		</key>
+		<key name="safety-mode" type="b">
+			<default>false</default>
+		</key>
 	</schema>
 </schemalist>

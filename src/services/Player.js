@@ -43,6 +43,10 @@ export class Player extends Service {
             Properties: {
                 zap: GObject.ParamSpec.object('zap', 'Zap', 'Zap', GObject.ParamFlags.READWRITE, Zap),
             },
+            Signals: {
+                'play-started': { param_types: [GObject.TYPE_STRING] },
+                'play-stopped': { param_types: [] },
+            },
         }, this);
     }
 
@@ -161,6 +165,11 @@ export class Player extends Service {
      * @param {Zap} zap The Zap to play.
      */
     play(zap) {
+        if (globalThis.settings.get_boolean('safety-mode') && this.playing) {
+            console.debug('Safety Mode: Playback blocked because a sound is already playing.');
+            return;
+        }
+
         console.debug(`Playing Zap "${zap.name}".`);
 
         if (zap === this.zap && zap.playing) {
@@ -177,6 +186,7 @@ export class Player extends Service {
         this.#playbin.set_state(Gst.State.PLAYING);
 
         this.#updateProgress();
+        this.emit('play-started', zap.uuid);
     }
 
     /**
@@ -202,6 +212,7 @@ export class Player extends Service {
         this.zap.playing = false;
         this.zap.progress = 0;
         this.zap = null;
+        this.emit('play-stopped');
     }
 
     /**

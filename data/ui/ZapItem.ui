@@ -65,7 +65,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 					</object>
 				</child>
 				<child>
-					<object class="GtkButton">
+					<object class="GtkButton" id="playButton">
 						<signal name="clicked" handler="onPlayButtonClicked"/>
 						<property name="tooltip-text" translatable="yes">Play</property>
 						<property name="hexpand">true</property>

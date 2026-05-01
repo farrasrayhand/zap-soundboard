@@ -179,6 +179,10 @@ nene https://opengameart.org/users/nene</property>
 		</section>
 		<section>
 			<item>
+				<attribute name="label" translatable="yes">Preferences</attribute>
+				<attribute name="action">win.show-preferences</attribute>
+			</item>
+			<item>
 				<attribute name="label" translatable="yes">Keyboard Shortcuts</attribute>
 				<attribute name="action">win.show-help-overlay</attribute>
 			</item>

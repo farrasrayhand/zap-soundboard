@@ -28,6 +28,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 		<file>widgets/ColorPill.js</file>
 		<file>widgets/EditZapPopover.js</file>
 		<file>widgets/FileChooserButton.js</file>
+		<file>widgets/PreferencesWindow.js</file>
 		<file>widgets/ProgressBar.js</file>
 		<file>widgets/Window.js</file>
 		<file>widgets/ZapGroupSeparator.js</file>

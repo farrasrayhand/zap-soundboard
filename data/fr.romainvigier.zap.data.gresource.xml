@@ -50,6 +50,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 		<file preprocess="xml-stripblanks">ui/CollectionsMenuButton.ui</file>
 		<file preprocess="xml-stripblanks">ui/EditZapPopover.ui</file>
 		<file preprocess="xml-stripblanks">ui/FileChooserButton.ui</file>
+		<file preprocess="xml-stripblanks">ui/PreferencesWindow.ui</file>
 		<file preprocess="xml-stripblanks" alias="gtk/help-overlay.ui">ui/ShortcutsWindow.ui</file>
 		<file preprocess="xml-stripblanks">ui/Window.ui</file>
 		<file preprocess="xml-stripblanks">ui/ZapItem.ui</file>

@@ -19,6 +19,9 @@ export class ZapItem extends Gtk.Widget {
     /** @type {Gtk.Revealer} */
     #stopButtonRevealer;
 
+    /** @type {Gtk.Button} */
+    #playButton;
+
     /** @type {?string} */
     #previousItemCssClass;
 
@@ -31,9 +34,12 @@ export class ZapItem extends Gtk.Widget {
                 zap: GObject.ParamSpec.object('zap', 'Zap', 'Zap', GObject.ParamFlags.READWRITE, Zap),
                 playing: GObject.ParamSpec.boolean('playing', 'Playing', 'Playing', GObject.ParamFlags.READWRITE, false),
             },
-            InternalChildren: ['stopButtonRevealer'],
+            InternalChildren: ['stopButtonRevealer', 'playButton'],
         }, this);
     }
+
+    /** @type {number[]} */
+    #playerConnections = [];
 
     /**
      * @param {object} params Parameter object.
@@ -50,12 +56,58 @@ export class ZapItem extends Gtk.Widget {
         this.playing = playing;
 
         this.#stopButtonRevealer = this._stopButtonRevealer;
+        this.#playButton = this._playButton;
 
         this.#syncItemCssClass();
         this.#syncPlayingCssClass();
+        this.#syncSafetyMode();
 
         this.connect('notify::zap', () => this.#syncItemCssClass());
-        this.connect('notify::playing', () => this.#syncPlayingCssClass());
+        this.connect('notify::playing', () => {
+            this.#syncPlayingCssClass();
+            this.#syncSafetyMode();
+        });
+
+        this.#playerConnections.push(
+            globalThis.settings.connect('changed::safety-mode', () => this.#syncSafetyMode()),
+            globalThis.player.connect('play-started', () => this.#syncSafetyMode()),
+            globalThis.player.connect('play-stopped', () => this.#syncSafetyMode())
+        );
+    }
+
+    /**
+     * Dispose the widget.
+     */
+    vfunc_dispose() {
+        this.#playerConnections.forEach(id => {
+            if (GLib.signal_handler_is_connected(globalThis.player, id))
+                globalThis.player.disconnect(id);
+            else if (GLib.signal_handler_is_connected(globalThis.settings, id))
+                globalThis.settings.disconnect(id);
+        });
+        this.#playerConnections = [];
+        super.vfunc_dispose();
+    }
+
+    /**
+     * Synchronize Play button sensitivity with Safety Mode.
+     */
+    #syncSafetyMode() {
+        if (!this.#playButton)
+            return;
+
+        const safetyMode = globalThis.settings.get_boolean('safety-mode');
+        const isPlaying = globalThis.player.playing;
+
+        if (safetyMode && isPlaying) {
+            // Safety Mode is ON and something is playing: 
+            // Disable Play buttons of EVERYTHING (including the one playing)
+            this.#playButton.sensitive = false;
+        } else {
+            // Either safety mode is OFF or nothing is playing:
+            // Re-enable Play button
+            this.#playButton.sensitive = true;
+        }
     }
 
     /**

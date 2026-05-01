@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
+<interface>
+	<template class="ZapPreferencesWindow" parent="AdwPreferencesWindow">
+		<property name="title" translatable="yes">Preferences</property>
+		<child>
+			<object class="AdwPreferencesPage">
+				<property name="title" translatable="yes">General</property>
+				<property name="icon-name">fr.romainvigier.zap-app-symbolic</property>
+				<child>
+					<object class="AdwPreferencesGroup">
+						<property name="title" translatable="yes">Playback</property>
+						<child>
+							<object class="AdwActionRow" id="safetyModeRow">
+								<property name="title" translatable="yes">Safety Mode</property>
+								<property name="subtitle" translatable="yes">Prevent starting a new sound or restarting the current one while playing.</property>
+								<property name="activatable-widget">safetyModeSwitch</property>
+								<child>
+									<object class="GtkSwitch" id="safetyModeSwitch">
+										<property name="valign">center</property>
+									</object>
+								</child>
+							</object>
+						</child>
+					</object>
+				</child>
+			</object>
+		</child>
+	</template>
+</interface>
