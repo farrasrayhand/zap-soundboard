@@ -165,6 +165,24 @@ export class Player extends Service {
      * @param {Zap} zap The Zap to play.
      */
     play(zap) {
+        // Toggle pause if it's the same zap and enable-pause is on
+        const safetyMode = globalThis.settings.get_boolean('safety-mode');
+        if (globalThis.settings.get_boolean('enable-pause') && zap === this.zap && !safetyMode) {
+            if (this.playing) {
+                this.#playbin.set_state(Gst.State.PAUSED);
+                this.zap.paused = true;
+                this.zap.playing = false;
+                this.#stopUpdatingProgress();
+                return;
+            } else if (zap.paused) {
+                this.#playbin.set_state(Gst.State.PLAYING);
+                this.zap.paused = false;
+                this.zap.playing = true;
+                this.#updateProgress();
+                return;
+            }
+        }
+
         if (globalThis.settings.get_boolean('safety-mode') && this.playing) {
             console.debug('Safety Mode: Playback blocked because a sound is already playing.');
             return;
@@ -182,6 +200,7 @@ export class Player extends Service {
         this.zap = zap;
         this.#connectToZap();
         this.zap.playing = true;
+        this.zap.paused = false;
         this.#playbin.uri = zap.file.get_uri();
         this.#playbin.set_state(Gst.State.PLAYING);
 
@@ -210,6 +229,7 @@ export class Player extends Service {
 
         this.#disconnectFromZap();
         this.zap.playing = false;
+        this.zap.paused = false;
         this.zap.progress = 0;
         this.zap = null;
         this.emit('play-stopped');
@@ -220,11 +240,14 @@ export class Player extends Service {
      *
      * @param {number} length Length of the fade out, in seconds.
      */
-    fadeOut(length = 1) {
+    fadeOut(length = null) {
         if (!this.zap)
             return;
 
-        console.debug('Start fading out...');
+        if (length === null)
+            length = globalThis.settings.get_double('fadeout-duration');
+
+        console.debug(`Start fading out (${length}s)...`);
 
         const [positionOk, position] = this.#playbin.query_position(Gst.Format.TIME);
         const [durationOk, duration] = this.#playbin.query_duration(Gst.Format.TIME);

@@ -21,6 +21,8 @@ export class EditZapPopover extends Gtk.Popover {
     #nameEntry;
     /** @type {Gtk.Entry} */
     #groupEntry;
+    /** @type {Gtk.Entry} */
+    #hotkeyEntry;
 
     static {
         GObject.registerClass({
@@ -30,7 +32,7 @@ export class EditZapPopover extends Gtk.Popover {
                 zap: GObject.ParamSpec.object('zap', 'Zap', 'Zap', GObject.ParamFlags.READWRITE, Zap),
                 collections: GObject.ParamSpec.object('collections', 'Collections', 'Collections', GObject.ParamFlags.READWRITE, Gio.ListModel),
             },
-            InternalChildren: ['nameEntry', 'groupEntry'],
+            InternalChildren: ['nameEntry', 'groupEntry', 'hotkeyEntry'],
         }, this);
     }
 
@@ -49,6 +51,28 @@ export class EditZapPopover extends Gtk.Popover {
 
         this.#nameEntry = this._nameEntry;
         this.#groupEntry = this._groupEntry;
+        this.#hotkeyEntry = this._hotkeyEntry;
+
+        this.#setupHotkeyEntry(this.#hotkeyEntry);
+    }
+
+    /**
+     * Setup a hotkey entry to capture key presses.
+     *
+     * @param {Gtk.Entry} entry The entry to setup.
+     */
+    #setupHotkeyEntry(entry) {
+        const controller = new Gtk.EventControllerKey();
+        controller.set_propagation_phase(Gtk.PropagationPhase.CAPTURE);
+        controller.connect('key-pressed', (c, keyval, keycode, state) => {
+            const keyName = Gdk.keyval_name(keyval);
+            if (keyName) {
+                entry.text = keyName;
+                return true;
+            }
+            return false;
+        });
+        entry.add_controller(controller);
     }
 
     /**
@@ -61,6 +85,7 @@ export class EditZapPopover extends Gtk.Popover {
             return;
         this.#nameEntry.text = this.zap.name;
         this.#groupEntry.text = this.zap.groupName || '';
+        this.#hotkeyEntry.text = this.zap.hotkey || '';
     }
 
     /**
@@ -95,6 +120,61 @@ export class EditZapPopover extends Gtk.Popover {
             groupName: entry.text,
         });
         this.popdown();
+    }
+
+    /**
+     * Callback when the hotkey entry is activated.
+     *
+     * @param {Gtk.Entry} entry Hotkey entry.
+     */
+    onHotkeyEntryActivated(entry) {
+        if (!this.zap)
+            return;
+        globalThis.zaps.changeHotkey({
+            zap: this.zap,
+            hotkey: entry.text,
+        });
+        this.popdown();
+    }
+
+    /**
+     * Callback when the save button is clicked.
+     *
+     * @param {Gtk.Button} button Save button.
+     */
+    onSaveButtonClicked(button) {
+        if (!this.zap)
+            return;
+
+        if (this.#nameEntry.text) {
+            globalThis.zaps.rename({
+                zap: this.zap,
+                name: this.#nameEntry.text,
+            });
+        }
+
+        globalThis.zaps.changeGroupName({
+            zap: this.zap,
+            groupName: this.#groupEntry.text,
+        });
+
+        globalThis.zaps.changeHotkey({
+            zap: this.zap,
+            hotkey: this.#hotkeyEntry.text,
+        });
+
+        this.popdown();
+    }
+
+    /**
+     * Callback when the hotkey entry icon is released (clicked).
+     *
+     * @param {Gtk.Entry} entry Entry.
+     * @param {Gtk.EntryIconPosition} iconPosition Position.
+     */
+    onHotkeyEntryIconReleased(entry, iconPosition) {
+        if (iconPosition === Gtk.EntryIconPosition.SECONDARY)
+            entry.text = '';
     }
 
     /**

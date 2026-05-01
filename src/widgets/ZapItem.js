@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import Gdk from 'gi://Gdk';
+import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
 
@@ -40,12 +41,22 @@ export class ZapItem extends Gtk.Widget {
                 zap: GObject.ParamSpec.object('zap', 'Zap', 'Zap', GObject.ParamFlags.READWRITE, Zap),
                 playing: GObject.ParamSpec.boolean('playing', 'Playing', 'Playing', GObject.ParamFlags.READWRITE, false),
             },
-            InternalChildren: ['stopButtonRevealer', 'stopButton', 'fadeOutButton', 'playButton'],
+            InternalChildren: ['stopButtonRevealer', 'stopButton', 'fadeOutButton', 'playButton', 'playImage'],
         }, this);
     }
 
+    /** @type {Gtk.Image} */
+    #playImage;
+
     /** @type {number[]} */
     #playerConnections = [];
+    /** @type {number[]} */
+    #settingsConnections = [];
+    /** @type {number[]} */
+    #zapConnections = [];
+
+    /** @type {?Zap} */
+    #connectedZap = null;
 
     /**
      * @param {object} params Parameter object.
@@ -65,24 +76,57 @@ export class ZapItem extends Gtk.Widget {
         this.#stopButton = this._stopButton;
         this.#fadeOutButton = this._fadeOutButton;
         this.#playButton = this._playButton;
+        this.#playImage = this._playImage;
 
         this.#syncItemCssClass();
         this.#syncPlayingCssClass();
         this.#syncSafetyMode();
         this.#syncStopButton();
 
-        this.connect('notify::zap', () => this.#syncItemCssClass());
+        this.connect('notify::zap', () => {
+            this.#syncItemCssClass();
+            this.#syncSignals();
+        });
         this.connect('notify::playing', () => {
             this.#syncPlayingCssClass();
             this.#syncSafetyMode();
         });
 
-        this.#playerConnections.push(
+        this.#syncSignals();
+
+        this.#settingsConnections.push(
             globalThis.settings.connect('changed::safety-mode', () => this.#syncSafetyMode()),
-            globalThis.settings.connect('changed::hide-stop-button', () => this.#syncStopButton()),
+            globalThis.settings.connect('changed::enable-pause', () => this.#syncSafetyMode()),
+            globalThis.settings.connect('changed::hide-stop-button', () => this.#syncStopButton())
+        );
+        this.#playerConnections.push(
             globalThis.player.connect('play-started', () => this.#syncSafetyMode()),
             globalThis.player.connect('play-stopped', () => this.#syncSafetyMode())
         );
+    }
+
+    /**
+     * Synchronize signals.
+     */
+    #syncSignals() {
+        if (this.#connectedZap === this.zap)
+            return;
+
+        if (this.#connectedZap) {
+            this.#zapConnections.forEach(id => {
+                if (GLib.signal_handler_is_connected(this.#connectedZap, id))
+                    this.#connectedZap.disconnect(id);
+            });
+            this.#zapConnections = [];
+        }
+
+        this.#connectedZap = this.zap;
+
+        if (this.#connectedZap) {
+            this.#zapConnections.push(
+                this.#connectedZap.connect('notify::paused', () => this.#syncPlayingCssClass())
+            );
+        }
     }
 
     /**
@@ -107,10 +151,23 @@ export class ZapItem extends Gtk.Widget {
         this.#playerConnections.forEach(id => {
             if (GLib.signal_handler_is_connected(globalThis.player, id))
                 globalThis.player.disconnect(id);
-            else if (GLib.signal_handler_is_connected(globalThis.settings, id))
-                globalThis.settings.disconnect(id);
         });
         this.#playerConnections = [];
+        this.#settingsConnections.forEach(id => {
+            if (GLib.signal_handler_is_connected(globalThis.settings, id))
+                globalThis.settings.disconnect(id);
+        });
+        this.#settingsConnections = [];
+
+        if (this.#connectedZap) {
+            this.#zapConnections.forEach(id => {
+                if (GLib.signal_handler_is_connected(this.#connectedZap, id))
+                    this.#connectedZap.disconnect(id);
+            });
+            this.#zapConnections = [];
+            this.#connectedZap = null;
+        }
+
         super.vfunc_dispose();
     }
 
@@ -118,7 +175,7 @@ export class ZapItem extends Gtk.Widget {
      * Synchronize Play button sensitivity with Safety Mode.
      */
     #syncSafetyMode() {
-        if (!this.#playButton)
+        if (!this.#playButton || !this.#playImage)
             return;
 
         const safetyMode = globalThis.settings.get_boolean('safety-mode');
@@ -133,6 +190,9 @@ export class ZapItem extends Gtk.Widget {
             // Re-enable Play button
             this.#playButton.sensitive = true;
         }
+
+        // Force icon refresh
+        this.#playImage.icon_name = this.getPlayPauseIcon(this, this.playing, this.zap ? this.zap.paused : false);
     }
 
     /**
@@ -151,10 +211,19 @@ export class ZapItem extends Gtk.Widget {
      * Synchronize CSS class to the Zap's playing state.
      */
     #syncPlayingCssClass() {
-        if (this.#stopButtonRevealer.childRevealed || this.playing)
+        if (!this.#stopButtonRevealer)
+            return;
+
+        if (this.#stopButtonRevealer.childRevealed || this.playing) {
             this.add_css_class('playing');
-        else
+            this.remove_css_class('paused');
+        } else if (this.zap && this.zap.paused) {
+            this.add_css_class('paused');
             this.remove_css_class('playing');
+        } else {
+            this.remove_css_class('playing');
+            this.remove_css_class('paused');
+        }
     }
 
     /**
@@ -163,6 +232,8 @@ export class ZapItem extends Gtk.Widget {
      * @param {Gtk.Revealer} revealer Revealer.
      */
     onStopButtonRevealChanged(revealer) {
+        if (!this.#stopButtonRevealer)
+            return;
         this.#syncPlayingCssClass();
     }
 
@@ -268,6 +339,31 @@ export class ZapItem extends Gtk.Widget {
             position: this.zap.position,
         });
         return true;
+    }
+
+    /**
+     * Helper to check if hotkey is not empty.
+     *
+     * @param {ZapItem} item Item.
+     * @param {string} hotkey Hotkey.
+     * @returns {boolean} True if not empty.
+     */
+    isHotkeyNotEmpty(item, hotkey) {
+        return !!hotkey;
+    }
+
+    /**
+     * Get the icon name for play/pause state.
+     *
+     * @param {ZapItem} item Item.
+     * @param {boolean} playing Playing state.
+     * @param {boolean} paused Paused state.
+     * @returns {string} Icon name.
+     */
+    getPlayPauseIcon(item, playing, paused) {
+        if (playing && globalThis.settings.get_boolean('enable-pause') && !globalThis.settings.get_boolean('safety-mode'))
+            return 'media-playback-pause-symbolic';
+        return 'fr.romainvigier.zap-play-symbolic';
     }
 
 }

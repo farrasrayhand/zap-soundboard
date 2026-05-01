@@ -26,9 +26,11 @@ export class Zap extends GObject.Object {
                 loop: GObject.ParamSpec.boolean('loop', 'Loop', 'Loop', GObject.ParamFlags.READWRITE, false),
                 volume: GObject.ParamSpec.double('volume', 'Volume', 'Volume', GObject.ParamFlags.READWRITE, 0.0, 1.0, 1.0),
                 playing: GObject.ParamSpec.boolean('playing', 'Playing', 'Playing', GObject.ParamFlags.READWRITE, false),
+                paused: GObject.ParamSpec.boolean('paused', 'Paused', 'Paused', GObject.ParamFlags.READWRITE, false),
                 progress: GObject.ParamSpec.double('progress', 'Progress', 'Progress', GObject.ParamFlags.READWRITE, 0.0, 1.0, 0.0),
                 position: GObject.ParamSpec.uint('position', 'Position', 'Position', GObject.ParamFlags.READWRITE, 0, GLib.MAXUINT32, 0),
                 groupName: GObject.ParamSpec.string('group-name', 'Group Name', 'Group Name', GObject.ParamFlags.READWRITE, ''),
+                hotkey: GObject.ParamSpec.string('hotkey', 'Hotkey', 'Hotkey', GObject.ParamFlags.READWRITE, ''),
             },
         }, this);
     }
@@ -43,9 +45,11 @@ export class Zap extends GObject.Object {
      * @param {boolean} params.loop Loop.
      * @param {number} params.volume Volume, between 0 and 1.
      * @param {boolean} params.playing Playing state.
+     * @param {boolean} params.paused Paused state.
      * @param {number} params.progress Progress, between 0 and 1.
      * @param {number} params.position Position in the collection, an unsigned integer.
      * @param {string} params.groupName Name of the group.
+     * @param {string} params.hotkey Hotkey.
      */
     constructor({
         uuid = '',
@@ -56,9 +60,11 @@ export class Zap extends GObject.Object {
         loop = false,
         volume = 1,
         playing = false,
+        paused = false,
         progress = 0,
         position = 0,
         groupName = '',
+        hotkey = '',
         ...params
     } = {}) {
         super(params);
@@ -111,6 +117,12 @@ export class Zap extends GObject.Object {
          */
         this.playing = playing;
         /**
+         * If the Zap is paused.
+         *
+         * @type {boolean}
+         */
+        this.paused = paused;
+        /**
          * The Zap's current progress, between 0 and 1.
          *
          * @type {number}
@@ -128,6 +140,12 @@ export class Zap extends GObject.Object {
          * @type {string}
          */
         this.groupName = groupName || '';
+        /**
+         * Hotkey of the Zap.
+         *
+         * @type {string}
+         */
+        this.hotkey = hotkey || '';
     }
 
     /**
@@ -144,9 +162,11 @@ export class Zap extends GObject.Object {
             loop: new GLib.Variant('b', this.loop),
             volume: new GLib.Variant('d', this.volume),
             playing: new GLib.Variant('b', this.playing),
+            paused: new GLib.Variant('b', this.paused),
             progress: new GLib.Variant('d', this.progress),
             position: new GLib.Variant('i', this.position),
             groupName: new GLib.Variant('s', this.groupName || ''),
+            hotkey: new GLib.Variant('s', this.hotkey || ''),
         };
     }
 

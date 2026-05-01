@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
+<!DOCTYPE node PUBLIC
+	"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+	"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd" >
+<node>
+	<!--
+		fr.romainvigier.zap.Collections1:
+		@short_description: Collection management interface
+
+		Add, update and remove collections.
+
+		This documents version 1 of the interface.
+	-->
+	<interface name="fr.romainvigier.zap.Collections">
+		<property name="version" type="u" access="read"/>
+		<!--
+			GetCollections:
+
+			An array of all the collections. See the fr.romainvigier.zap.Collections.GetCollection() method for details of the collection dictionary.
+		-->
+		<method name="GetCollections">
+			<arg name="collections" type="aa{sv}" direction="out"/>
+		</method>
+		<!--
+			GetCollection:
+			@uuid: UUID of the collection to retrieve.
+			@collection: Retrieved collection.
+
+			Retrieves the collection with the UUID @uuid. The returned @collection is a dictionary with the following keys:
+
+			<variablelist>
+				<varlistentry>
+					<term>s uuid</term>
+					<listitem><para>UUID of the collection, wrapped in a string variant</para></listitem>
+				</varlistentry>
+				<varlistentry>
+					<term>s name</term>
+					<listitem><para>Name of the collection, wrapped in a string variant</para></listitem>
+				</varlistentry>
+			</variablelist>
+		-->
+		<method name="GetCollection">
+			<arg name="uuid" type="s" direction="in"/>
+			<arg name="collection" type="a{sv}" direction="out"/>
+		</method>
+		<!--
+			AddCollection:
+			@name: Name of the collection.
+			@collection: Added collection.
+
+			Add a collection with the given @name and returns the created collection. See the fr.romainvigier.zap.Collections.GetCollection() method for details on the returned @collection dictionary.
+		-->
+		<method name="AddCollection">
+			<arg name="name" type="s" direction="in"/>
+			<arg name="collection" type="a{sv}" direction="out"/>
+		</method>
+		<!--
+			RemoveCollection:
+			@uuid: UUID of the collection to remove.
+
+			Remove the collection with UUID given in @uuid.
+		-->
+		<method name="RemoveCollection">
+			<arg name="uuid" type="s" direction="in"/>
+		</method>
+		<!--
+			UpdateCollection:
+			@uuid: UUID of the collection to update.
+			@properties: Dictionary of properties to update.
+
+			Update the collecyion with the UUID @uuid. @properties is a dictionary that can have the following keys:
+
+			<variablelist>
+				<varlistentry>
+					<term>s name</term>
+					<listitem><para>Name of the collection, wrapped in a string variant</para></listitem>
+				</varlistentry>
+			</variablelist>
+		-->
+		<method name="UpdateCollection">
+			<arg name="uuid" type="s" direction="in"/>
+			<arg name="properties" type="a{sv}" direction="in"/>
+		</method>
+		<!--
+			CollectionAdded:
+			@uuid: UUID of the added collection.
+
+			Emitted when a collection is added.
+		-->
+		<signal name="CollectionAdded">
+			<arg name="uuid" type="s"/>
+		</signal>
+		<!--
+			CollectionRemoved:
+			@uuid: UUID of the removed collection.
+
+			Emitted when a collection is removed.
+		-->
+		<signal name="CollectionRemoved">
+			<arg name="uuid" type="s"/>
+		</signal>
+		<!--
+			CollectionUpdated:
+			@uuid: UUID of the updated collection.
+
+			Emitted when a collection is updated.
+		-->
+		<signal name="CollectionUpdated">
+			<arg name="uuid" type="s"/>
+		</signal>
+	</interface>
+</node>

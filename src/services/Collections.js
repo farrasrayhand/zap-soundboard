@@ -102,12 +102,13 @@ export class Collections extends Service {
         while (cursor.next(this.#cancellable)) {
             const data = {};
             for (let i = 0; i < cursor.nColumns; i++) {
+                const value = cursor.get_string(i);
                 switch (cursor.get_variable_name(i)) {
                     case 'uuid':
-                        [data.uuid] = cursor.get_string(i);
+                        data.uuid = value ? value[0] : '';
                         break;
                     case 'name':
-                        [data.name] = cursor.get_string(i);
+                        data.name = value ? value[0] : '';
                         break;
                     default:
                 }

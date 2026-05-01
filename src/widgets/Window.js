@@ -5,6 +5,7 @@
 import Adw from 'gi://Adw';
 import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
 
@@ -51,6 +52,11 @@ export class Window extends Adw.ApplicationWindow {
         }, this);
     }
 
+    /** @type {number[]} */
+    #zapsConnections = [];
+    /** @type {number[]} */
+    #collectionsConnections = [];
+
     /**
      * @param {object} params Parameter object.
      * @param {?Collection} params.selectedCollection Selected collection.
@@ -86,24 +92,82 @@ export class Window extends Adw.ApplicationWindow {
         this.#addZapPopupOverlay.set_measure_overlay(this.#addZapPopup, true);
 
         this.connect('notify::selected-collection', () => this.#refreshZaps());
-        globalThis.zaps.connect('items-changed', () => this.#refreshZaps());
-        globalThis.zaps.connect('groups-changed', () => this.#refreshZaps());
-        globalThis.zaps.connect('zap-updated', (zaps, zap, property) => {
-            if (['groupName', 'position', 'collectionUuid'].includes(property))
-                this.#refreshZaps();
-        });
+        this.#zapsConnections.push(
+            globalThis.zaps.connect('items-changed', () => this.#refreshZaps()),
+            globalThis.zaps.connect('groups-changed', () => this.#refreshZaps()),
+            globalThis.zaps.connect('zap-updated', (zaps, zap, property) => {
+                if (['groupName', 'position', 'collectionUuid'].includes(property))
+                    this.#refreshZaps();
+            })
+        );
 
         this.#refreshZaps();
+        this.#setupHotkeys();
 
         if (globalThis.devel)
             this.add_css_class('devel');
     }
 
     /**
+     * Dispose the window.
+     */
+    vfunc_dispose() {
+        this.#zapsConnections.forEach(id => globalThis.zaps.disconnect(id));
+        this.#zapsConnections = [];
+        this.#collectionsConnections.forEach(id => globalThis.collections.disconnect(id));
+        this.#collectionsConnections = [];
+        super.vfunc_dispose();
+    }
+
+    /**
+     * Setup hotkeys.
+     */
+    #setupHotkeys() {
+        const controller = new Gtk.EventControllerKey();
+        controller.connect('key-pressed', (c, keyval, keycode, state) => {
+            // Do not trigger if an entry is focused
+            const focus = this.get_focus();
+            if (focus instanceof Gtk.Editable)
+                return false;
+
+            const key = Gdk.keyval_name(keyval);
+            if (!key)
+                return false;
+
+            // Global Hotkeys (Stop and Fade Out)
+            const stopHotkey = globalThis.settings.get_string('stop-hotkey');
+            const fadeoutHotkey = globalThis.settings.get_string('fadeout-hotkey');
+
+            if (key === stopHotkey) {
+                globalThis.player.stop();
+                return true;
+            }
+
+            if (key === fadeoutHotkey) {
+                globalThis.player.fadeOut();
+                return true;
+            }
+
+            // Search for a Zap with this hotkey in the current collection
+            for (let i = 0; i < globalThis.zaps.get_n_items(); i++) {
+                const zap = globalThis.zaps.get_item(i);
+                if (zap.collectionUuid === this.selectedCollection.uuid && zap.hotkey === key) {
+                    if (zap.file.query_exists(null)) {
+                        globalThis.player.play(zap);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        });
+        this.add_controller(controller);
+    }
+
+    /**
      * Refresh the Zaps display.
      */
     #refreshZaps() {
-        if (!this.#zapsBox || !this.selectedCollection)
+        if (!this.#zapsBox || !this.selectedCollection || !this.#zapsStack)
             return;
 
         // Clear current content
@@ -208,22 +272,23 @@ export class Window extends Adw.ApplicationWindow {
      */
     vfunc_close_request() {
         this.#saveSettings();
-        super.vfunc_close_request();
-        this.run_dispose();
+        return super.vfunc_close_request();
     }
 
     /**
      * Setup collections.
      */
     #setupCollections() {
-        globalThis.collections.connect('collection-removed', (collections, uuid) => {
-            if (this.selectedCollection.uuid === uuid)
-                this.selectedCollection = collections.get_item(0);
-        });
-        globalThis.collections.connect('collection-added', (collections, uuid) => {
-            if (!this.selectedCollection)
-                this.selectedCollection = collections.get_item(0);
-        });
+        this.#collectionsConnections.push(
+            globalThis.collections.connect('collection-removed', (collections, uuid) => {
+                if (this.selectedCollection.uuid === uuid)
+                    this.selectedCollection = collections.get_item(0);
+            }),
+            globalThis.collections.connect('collection-added', (collections, uuid) => {
+                if (!this.selectedCollection)
+                    this.selectedCollection = collections.get_item(0);
+            })
+        );
     }
 
     /**
@@ -327,7 +392,7 @@ export class Window extends Adw.ApplicationWindow {
      * @returns {string} Package version.
      */
     getPackageVersion(window) {
-        return pkg.version;
+        return (typeof pkg !== 'undefined') ? pkg.version : '1.2.3';
     }
 
     /**

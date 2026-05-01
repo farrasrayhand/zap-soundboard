@@ -96,10 +96,11 @@ export class Zaps extends Service {
         while (groupCursor.next(this.#cancellable)) {
             const data = {};
             for (let i = 0; i < groupCursor.nColumns; i++) {
+                const value = groupCursor.get_string(i);
                 switch (groupCursor.get_variable_name(i)) {
-                    case 'uuid': [data.uuid] = groupCursor.get_string(i); break;
-                    case 'name': [data.name] = groupCursor.get_string(i); break;
-                    case 'collectionUuid': [data.collectionUuid] = groupCursor.get_string(i); break;
+                    case 'uuid': data.uuid = value ? value[0] : ''; break;
+                    case 'name': data.name = value ? value[0] : ''; break;
+                    case 'collectionUuid': data.collectionUuid = value ? value[0] : ''; break;
                     case 'position': data.position = groupCursor.get_integer(i); break;
                 }
             }
@@ -108,7 +109,7 @@ export class Zaps extends Service {
 
         // Zaps
         const cursor = globalThis.database.query(
-            `SELECT ?uuid ?name ?collectionUuid ?uri ?color ?loop ?volume ?position ?groupName {
+            `SELECT ?uuid ?name ?collectionUuid ?uri ?color ?loop ?volume ?position ?groupName ?hotkey {
                 ?zap a zap:Zap;
                     zap:uuid ?uuid;
                     zap:name ?name;
@@ -119,21 +120,24 @@ export class Zaps extends Service {
                     zap:volume ?volume;
                     zap:position ?position.
                 OPTIONAL { ?zap zap:groupName ?groupName }
+                OPTIONAL { ?zap zap:hotkey ?hotkey }
             }`
         );
         while (cursor.next(this.#cancellable)) {
             const data = {};
             for (let i = 0; i < cursor.nColumns; i++) {
+                const value = cursor.get_string(i);
                 switch (cursor.get_variable_name(i)) {
-                    case 'uuid': [data.uuid] = cursor.get_string(i); break;
-                    case 'name': [data.name] = cursor.get_string(i); break;
-                    case 'collectionUuid': [data.collectionUuid] = cursor.get_string(i); break;
-                    case 'uri': data.file = Gio.File.new_for_uri(cursor.get_string(i)[0]); break;
-                    case 'color': data.color = Color.fromId(cursor.get_string(i)[0]); break;
+                    case 'uuid': data.uuid = value ? value[0] : ''; break;
+                    case 'name': data.name = value ? value[0] : ''; break;
+                    case 'collectionUuid': data.collectionUuid = value ? value[0] : ''; break;
+                    case 'uri': data.file = value ? Gio.File.new_for_uri(value[0]) : null; break;
+                    case 'color': data.color = value ? Color.fromId(value[0]) : Color.GRAY; break;
                     case 'loop': data.loop = cursor.get_boolean(i); break;
                     case 'volume': data.volume = cursor.get_double(i); break;
                     case 'position': data.position = cursor.get_integer(i); break;
-                    case 'groupName': [data.groupName] = cursor.get_string(i); break;
+                    case 'groupName': data.groupName = value ? value[0] : ''; break;
+                    case 'hotkey': data.hotkey = value ? value[0] : ''; break;
                 }
             }
             this.#zaps.push(new Zap(data));
@@ -205,7 +209,7 @@ export class Zaps extends Service {
         this.emit('groups-changed');
     }
 
-    add({ name, collection, uri, color = Color.GRAY, loop = false, volume = 1, groupName = '' }) {
+    add({ name, collection, uri, color = Color.GRAY, loop = false, volume = 1, groupName = '', hotkey = '' }) {
         const originalFile = Gio.File.new_for_uri(uri);
         if (!originalFile.query_exists(this.#cancellable))
             throw new Error(`File '${uri}' does not exist.`);
@@ -219,6 +223,7 @@ export class Zaps extends Service {
             uuid, name, collectionUuid: collection.uuid, file, color, loop, volume,
             position: this.#getTotalInCollection(collection.uuid),
             groupName,
+            hotkey,
         });
 
         const resource = Tracker.Resource.new(null);
@@ -232,6 +237,7 @@ export class Zaps extends Service {
         resource.set_double('zap:volume', zap.volume);
         resource.set_int('zap:position', zap.position);
         resource.set_string('zap:groupName', zap.groupName);
+        resource.set_string('zap:hotkey', zap.hotkey);
         globalThis.database.batch([resource]);
 
         this.#zaps.push(zap);
@@ -301,6 +307,11 @@ export class Zaps extends Service {
     changeGroupName({ zap, groupName }) {
         if (zap.groupName === groupName) return;
         this.#updateProperty(zap, 'groupName', Tracker.sparql_escape_string(groupName));
+    }
+
+    changeHotkey({ zap, hotkey }) {
+        if (zap.hotkey === hotkey) return;
+        this.#updateProperty(zap, 'hotkey', Tracker.sparql_escape_string(hotkey));
     }
 
     #updateProperty(zap, property, value) {

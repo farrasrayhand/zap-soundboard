@@ -8,42 +8,156 @@ SPDX-License-Identifier: GPL-3.0-or-later
 -->
 
 <interface>
-	<template class="ZapPreferencesWindow" parent="AdwPreferencesWindow">
+	<template class="ZapPreferencesWindow" parent="AdwWindow">
 		<property name="title" translatable="yes">Preferences</property>
-		<child>
-			<object class="AdwPreferencesPage">
-				<property name="title" translatable="yes">General</property>
-				<property name="icon-name">fr.romainvigier.zap-app-symbolic</property>
-				<child>
-					<object class="AdwPreferencesGroup">
-						<property name="title" translatable="yes">Playback</property>
+		<property name="default-width">450</property>
+		<property name="default-height">550</property>
+		<property name="modal">true</property>
+		<property name="content">
+			<object class="AdwToolbarView">
+				<child type="top">
+					<object class="AdwHeaderBar">
+					</object>
+				</child>
+				<property name="content">
+					<object class="AdwPreferencesPage">
 						<child>
-							<object class="AdwActionRow" id="safetyModeRow">
-								<property name="title" translatable="yes">Safety Mode</property>
-								<property name="subtitle" translatable="yes">Prevent starting a new sound or restarting the current one while playing.</property>
-								<property name="activatable-widget">safetyModeSwitch</property>
+							<object class="AdwPreferencesGroup">
+								<property name="title" translatable="yes">Playback</property>
 								<child>
-									<object class="GtkSwitch" id="safetyModeSwitch">
-										<property name="valign">center</property>
+									<object class="AdwActionRow">
+										<property name="title" translatable="yes">Safety Mode</property>
+										<property name="subtitle" translatable="yes">Prevent starting a new sound or restarting the current one while playing.</property>
+										<property name="activatable-widget">safetyModeSwitch</property>
+										<child>
+											<object class="GtkSwitch" id="safetyModeSwitch">
+												<property name="valign">center</property>
+											</object>
+										</child>
 									</object>
 								</child>
+								<child>
+									<object class="AdwActionRow" id="hideStopButtonRow">
+										<property name="title" translatable="yes">Hide Stop Button</property>
+										<property name="subtitle" translatable="yes">Hide the immediate stop button and only use fade out.</property>
+										<property name="activatable-widget">hideStopButtonSwitch</property>
+										<child>
+											<object class="GtkSwitch" id="hideStopButtonSwitch">
+												<property name="valign">center</property>
+											</object>
+										</child>
+									</object>
+								</child>
+								<child>
+									<object class="AdwActionRow" id="enablePauseRow">
+										<property name="title" translatable="yes">Enable Pause</property>
+										<property name="subtitle" translatable="yes">Pause and resume playback when clicking the same sound.</property>
+										<property name="activatable-widget">enablePauseSwitch</property>
+										<child>
+											<object class="GtkSwitch" id="enablePauseSwitch">
+												<property name="valign">center</property>
+											</object>
+										</child>
+									</object>
+								</child>
+								<child>
+									<object class="AdwActionRow">
+										<property name="title" translatable="yes">Fade Out Duration (seconds)</property>
+										<child>
+											<object class="GtkSpinButton" id="fadeoutDurationSpinButton">
+												<property name="valign">center</property>
+												<property name="adjustment">
+													<object class="GtkAdjustment">
+														<property name="lower">0.1</property>
+														<property name="upper">10.0</property>
+														<property name="step-increment">0.1</property>
+														<property name="page-increment">1.0</property>
+														<property name="value">1.0</property>
+													</object>
+												</property>
+												<property name="climb-rate">0.1</property>
+												<property name="digits">1</property>
+											</object>
+										</child>
+									</object>
+								</child>
+								</object>
+								</child>
+						<child>
+							<object class="AdwPreferencesGroup">
+								<property name="title" translatable="yes">Global Hotkeys</property>
+								<child>
+									<object class="AdwActionRow">
+										<property name="title" translatable="yes">Stop Hotkey</property>
+										<child>
+											<object class="GtkEntry" id="stopHotkeyEntry">
+												<property name="valign">center</property>
+												<property name="placeholder-text" translatable="yes">e.g. Escape</property>
+												<property name="secondary-icon-name">edit-clear-symbolic</property>
+												<property name="secondary-icon-activatable">true</property>
+												<property name="secondary-icon-sensitive">true</property>
+												<signal name="icon-release" handler="onHotkeyEntryIconReleased"/>
+											</object>
+										</child>
+									</object>
+								</child>
+								<child>
+									<object class="AdwActionRow">
+										<property name="title" translatable="yes">Fade Out Hotkey</property>
+										<child>
+											<object class="GtkEntry" id="fadeoutHotkeyEntry">
+												<property name="valign">center</property>
+												<property name="placeholder-text" translatable="yes">e.g. BackSpace</property>
+												<property name="secondary-icon-name">edit-clear-symbolic</property>
+												<property name="secondary-icon-activatable">true</property>
+												<property name="secondary-icon-sensitive">true</property>
+												<signal name="icon-release" handler="onHotkeyEntryIconReleased"/>
+											</object>
+										</child>
+									</object>
+								</child>							</object>
+						</child>
+					</object>
+				</property>
+				<child type="bottom">
+					<object class="GtkBox">
+						<property name="margin-top">12</property>
+						<property name="margin-bottom">12</property>
+						<property name="margin-start">12</property>
+						<property name="margin-end">12</property>
+						<property name="spacing">12</property>
+						<child>
+							<object class="GtkButton" id="resetButton">
+								<property name="label" translatable="yes">Reset to Default</property>
+								<signal name="clicked" handler="onResetButtonClicked"/>
+								<style>
+									<class name="destructive-action"/>
+								</style>
 							</object>
 						</child>
 						<child>
-							<object class="AdwActionRow" id="hideStopButtonRow">
-								<property name="title" translatable="yes">Hide Stop Button</property>
-								<property name="subtitle" translatable="yes">Hide the immediate stop button and only use fade out.</property>
-								<property name="activatable-widget">hideStopButtonSwitch</property>
-								<child>
-									<object class="GtkSwitch" id="hideStopButtonSwitch">
-										<property name="valign">center</property>
-									</object>
-								</child>
+							<object class="GtkBox">
+								<property name="hexpand">true</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkButton" id="cancelButton">
+								<property name="label" translatable="yes">Cancel</property>
+								<signal name="clicked" handler="onCancelButtonClicked"/>
+							</object>
+						</child>
+						<child>
+							<object class="GtkButton" id="saveButton">
+								<property name="label" translatable="yes">Save</property>
+								<signal name="clicked" handler="onSaveButtonClicked"/>
+								<style>
+									<class name="suggested-action"/>
+								</style>
 							</object>
 						</child>
 					</object>
 				</child>
 			</object>
-		</child>
+		</property>
 	</template>
 </interface>

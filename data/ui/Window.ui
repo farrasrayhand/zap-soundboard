@@ -109,8 +109,8 @@ SPDX-License-Identifier: GPL-3.0-or-later
 								</child>
 								<child>
 									<object class="GtkButton">
+										<property name="label" translatable="yes">Add Sound</property>
 										<property name="tooltip-text" translatable="yes">Add a Zap</property>
-										<property name="icon-name">fr.romainvigier.zap-add-symbolic</property>
 										<property name="action-name">win.open-add-zap-popup</property>
 										<style>
 											<class name="flat"/>

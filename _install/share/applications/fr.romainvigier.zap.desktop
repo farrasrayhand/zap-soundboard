@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+[Desktop Entry]
+# Translators: Application name, avoid translating it!
+Name[de]=Zap
+Name[es]=Zap
+Name[fr]=Zap
+Name[hr]=Zap
+Name[nl]=Zap
+Name[pt_BR]=Zap
+Name[sv]=Zap
+Name=Zap
+# Translators: Generic application name.
+GenericName[de]=Soundboard
+GenericName[es]=Mesa de sonido
+GenericName[fr]=Soundboard
+GenericName[hr]=Ploča zvukova
+GenericName[nl]=Klankbord
+GenericName[pt_BR]=Mesa de som
+GenericName[sv]=Soundboard
+GenericName=Soundboard
+# Translators: Short description of the application.
+Comment[de]=Klänge von einem Soundboard abspielen
+Comment[es]=Reproduce sonidos de una mesa de sonidos
+Comment[fr]=Joue des sons depuis un soundboard
+Comment[hr]=Sviraj zvukove s ploče zvukova
+Comment[nl]=Speel geluiden met een klankbord
+Comment[pt_BR]=Reproduzir sons de uma mesa de som
+Comment[sv]=Spela ljud från en soundboard
+Comment=Play sounds from a soundboard
+Icon=fr.romainvigier.zap
+Exec=/home/br3ad/Projects/zap/_install/bin/fr.romainvigier.zap
+Type=Application
+Categories=Audio;
+# Translators: Search terms to find this application. Do NOT translate or localize the semicolons! The list MUST also end with a semicolon!
+Keywords[de]=Audio;Effect;Player;Sound;Soundboard;Streaming;Klang;Ton;Effekte;
+Keywords[es]=Audio;Efecto;Reroductor;Sonido;Mesa de sonido;Transmisión;
+Keywords[fr]=Audio;Effet;Lecteur;Son;Soundboard;Streaming;
+Keywords[hr]=audio;efekt;player;zvuk;Soundboard;ploča zvukova;emitiranje;
+Keywords[nl]=Audio;Effect;Player;Sound;Soundboard;Streaming;Speler;Geluid;Klankbord;Streamen;
+Keywords[pt_BR]=Audio;Effect;Player;Sound;Soundboard;Streaming;Áudio;Efeito;Reprodutor;Tocador;Som;Mesa;Transmissão;
+Keywords[sv]=Ljud;effekt;spelare;ljud;Soundboard;streaming;
+Keywords=Audio;Effect;Player;Sound;Soundboard;Streaming;

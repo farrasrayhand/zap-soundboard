@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<component xmlns:its="http://www.w3.org/2005/11/its" type="desktop-application">
+  <id>fr.romainvigier.zap</id>
+  <!-- Translators: Application name, avoid translating it! -->
+  <name>Zap</name>
+  <name xml:lang="sv">Zap</name>
+  <name xml:lang="pt-BR">Zap</name>
+  <name xml:lang="nl">Zap</name>
+  <name xml:lang="hr">Zap</name>
+  <name xml:lang="fr">Zap</name>
+  <name xml:lang="es">Zap</name>
+  <name xml:lang="de">Zap</name>
+  <metadata_license>CC-BY-SA-4.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <developer_name its:translate="no">Romain Vigier</developer_name>
+  <url type="homepage">https://zap.romainvigier.fr</url>
+  <url type="bugtracker">https://gitlab.com/rmnvgr/zap/-/issues</url>
+  <url type="translate">https://gitlab.com/rmnvgr/zap/-/blob/main/CONTRIBUTING.md#translations</url>
+  <url type="vcs-browser">https://gitlab.com/rmnvgr/zap/</url>
+  <!-- Translators: Short description of the application. -->
+  <summary>Play sounds from a soundboard</summary>
+  <summary xml:lang="sv">Spela ljud från en soundboard</summary>
+  <summary xml:lang="pt-BR">Reproduzir sons de uma mesa de som</summary>
+  <summary xml:lang="nl">Speel geluiden met een klankbord</summary>
+  <summary xml:lang="hr">Sviraj zvukove s ploče zvukova</summary>
+  <summary xml:lang="fr">Joue des sons depuis un soundboard</summary>
+  <summary xml:lang="es">Reproduce sonidos de una mesa de sonidos</summary>
+  <summary xml:lang="de">Klänge von einem Soundboard abspielen</summary>
+  <description>
+    <p>Play all your favorite sound effects! This handy soundboard makes your livestreams and videocasts more entertaining.</p>
+    <p xml:lang="sv">Spela alla dina favoritljudeffekter! Denna praktiska soundboard gör dina livestreams och videosändningar mer underhållande.</p>
+    <p xml:lang="pt-BR">Reproduza todos os seus efeitos sonoros favoritos! Esta prática mesa de som torna suas transmissões ao vivo e videocasts mais divertidas.</p>
+    <p xml:lang="nl">Speel al uw favoriete geluidseffecten af! Dit handige klankbord maakt uw livestreams en videocasts vermakelijker.</p>
+    <p xml:lang="hr">Sviraj sve svoje omiljene zvučne efekte! Ova praktična ploča zvukova čini tvoje prijenose uživo i emitiranja videa zabavnijima.</p>
+    <p xml:lang="fr">Jouez tous vos effets sonores favoris! Ce soundboard pratique rend vos diffusions en direct et vos enregistrements vidéo plus divertissants.</p>
+    <p xml:lang="es">Reproduce todos tus efectos de sonido favoritos! Esta útil mesa de sonido hace tus transmisiones en vivo y videocasts más entretenidas.</p>
+    <p xml:lang="de">Spielen Sie all Ihre Lieblingsklangeffekte ab! Dieses praktische Soundboard macht Ihre Livestreams und Videocasts noch unterhaltsamer.</p>
+    <p>Import audio files, arrange them in collections and customize their appearance.</p>
+    <p xml:lang="sv">Importera ljudfiler, ordna dem i samlingar och anpassa deras utseende.</p>
+    <p xml:lang="pt-BR">Importe arquivos de áudio, organize-os em coleções e personalize sua aparência.</p>
+    <p xml:lang="nl">Importeer audiobestanden, rangschik deze in verzamelingen en pas hun uiterlijk aan.</p>
+    <p xml:lang="hr">Uvezi audio datoteke, rasporedi ih u zbirke i prilagodi njihov izgled.</p>
+    <p xml:lang="fr">Importez des fichiers audio, classez-les dans des collections et personnalisez leur apparence.</p>
+    <p xml:lang="es">Importe achivos de audio, organízelos en colecciones y personalice su apariencia.</p>
+    <p xml:lang="de">Importieren Sie Audiodateien, ordnen Sie diese in Sammlungen und passen Sie ihr Erscheinungsbild an.</p>
+  </description>
+  <categories>
+    <category>Audio</category>
+  </categories>
+  <keywords>
+    <!-- Translators: Search term to find this application. -->
+    <keyword>Audio</keyword>
+    <keyword xml:lang="sv">Ljud</keyword>
+    <keyword xml:lang="pt-BR">Áudio</keyword>
+    <keyword xml:lang="nl">Audio</keyword>
+    <keyword xml:lang="hr">Audio</keyword>
+    <keyword xml:lang="fr">Audio</keyword>
+    <keyword xml:lang="es">Audio</keyword>
+    <keyword xml:lang="de">Audio</keyword>
+    <!-- Translators: Search term to find this application. -->
+    <keyword>Effect</keyword>
+    <keyword xml:lang="sv">Effekt</keyword>
+    <keyword xml:lang="pt-BR">Efeito</keyword>
+    <keyword xml:lang="nl">Effect</keyword>
+    <keyword xml:lang="hr">Efekt</keyword>
+    <keyword xml:lang="fr">Effet</keyword>
+    <keyword xml:lang="es">Efecto</keyword>
+    <keyword xml:lang="de">Effekt</keyword>
+    <!-- Translators: Search term to find this application. -->
+    <keyword>Player</keyword>
+    <keyword xml:lang="sv">Spelare</keyword>
+    <keyword xml:lang="pt-BR">Reprodutor</keyword>
+    <keyword xml:lang="nl">Speler</keyword>
+    <keyword xml:lang="hr">Player</keyword>
+    <keyword xml:lang="fr">Lecteur</keyword>
+    <keyword xml:lang="es">Reprodutor</keyword>
+    <keyword xml:lang="de">Medienwiedergabe</keyword>
+    <!-- Translators: Search term to find this application. -->
+    <keyword>Sound</keyword>
+    <keyword xml:lang="sv">Ljud</keyword>
+    <keyword xml:lang="pt-BR">Som</keyword>
+    <keyword xml:lang="nl">Geluid</keyword>
+    <keyword xml:lang="hr">Zvuk</keyword>
+    <keyword xml:lang="fr">Son</keyword>
+    <keyword xml:lang="es">Sonido</keyword>
+    <keyword xml:lang="de">Klang</keyword>
+    <!-- Translators: Search term to find this application. -->
+    <keyword>Soundboard</keyword>
+    <keyword xml:lang="sv">Soundboard</keyword>
+    <keyword xml:lang="pt-BR">Mesa de som</keyword>
+    <keyword xml:lang="nl">Klankbord</keyword>
+    <keyword xml:lang="hr">Ploča zvukova</keyword>
+    <keyword xml:lang="fr">Soundboard</keyword>
+    <keyword xml:lang="es">Mesa de sonido</keyword>
+    <keyword xml:lang="de">Soundboard</keyword>
+    <!-- Translators: Search term to find this application. -->
+    <keyword>Streaming</keyword>
+    <keyword xml:lang="sv">Streaming</keyword>
+    <keyword xml:lang="pt-BR">Transmissão</keyword>
+    <keyword xml:lang="nl">Streamen</keyword>
+    <keyword xml:lang="hr">Emitiranje</keyword>
+    <keyword xml:lang="fr">Streaming</keyword>
+    <keyword xml:lang="es">Transmisión</keyword>
+    <keyword xml:lang="de">Streamen</keyword>
+  </keywords>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://zap.romainvigier.fr/screenshots/1.png</image>
+    </screenshot>
+    <screenshot>
+      <image>https://zap.romainvigier.fr/screenshots/2.png</image>
+    </screenshot>
+  </screenshots>
+  <branding>
+    <color type="primary">#f8e45c</color>
+  </branding>
+  <launchable type="desktop-id">fr.romainvigier.zap.desktop</launchable>
+  <provides>
+    <binary>fr.romainvigier.zap</binary>
+    <dbus type="user">fr.romainvigier.zap.Collections</dbus>
+    <dbus type="user">fr.romainvigier.zap.Zaps</dbus>
+  </provides>
+  <translation type="gettext">fr.romainvigier.zap</translation>
+  <content_rating type="oars-1.1"/>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>touch</control>
+    <display_length compare="ge">xsmall</display_length>
+    <display_length compare="le">xlarge</display_length>
+  </supports>
+  <recommends>
+    <display_length compare="gt">xsmall</display_length>
+    <display_length compare="lt">xlarge</display_length>
+  </recommends>
+  <requires>
+    <internet>offline-only</internet>
+  </requires>
+  <releases>
+    <release version="1.2.3" date="2022-11-17">
+      <url>https://gitlab.com/rmnvgr/zap/-/releases/1.2.2</url>
+    </release>
+    <release version="1.2.2" date="2022-11-03">
+      <url>https://gitlab.com/rmnvgr/zap/-/releases/1.2.2</url>
+    </release>
+    <release version="1.2.1" date="2022-10-15">
+      <url>https://gitlab.com/rmnvgr/zap/-/releases/1.2.1</url>
+    </release>
+    <release version="1.2.0" date="2022-10-15">
+      <url>https://gitlab.com/rmnvgr/zap/-/releases/1.2.0</url>
+    </release>
+    <release version="1.1.0" date="2022-10-06">
+      <url>https://gitlab.com/rmnvgr/zap/-/releases/1.1.0</url>
+    </release>
+    <release version="1.0.0" date="2022-09-30">
+      <url>https://gitlab.com/rmnvgr/zap/-/releases/1.0.0</url>
+    </release>
+  </releases>
+</component>

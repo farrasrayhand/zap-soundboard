@@ -73,20 +73,51 @@ SPDX-License-Identifier: GPL-3.0-or-later
 							<object class="GtkBox">
 								<property name="spacing">12</property>
 								<child>
-									<object class="GtkImage">
-										<property name="icon-name">fr.romainvigier.zap-play-symbolic</property>
+									<object class="GtkImage" id="playImage">
+										<binding name="icon-name">
+											<closure type="gchararray" function="getPlayPauseIcon">
+												<lookup name="playing" type="Zap">
+													<lookup name="zap">ZapZapItem</lookup>
+												</lookup>
+												<lookup name="paused" type="Zap">
+													<lookup name="zap">ZapZapItem</lookup>
+												</lookup>
+											</closure>
+										</binding>
 									</object>
 								</child>
 								<child>
-									<object class="GtkInscription" id="nameInscription">
-										<binding name="text">
+									<object class="GtkLabel" id="nameInscription">
+										<binding name="label">
 											<lookup name="name" type="Zap">
 												<lookup name="zap">ZapZapItem</lookup>
 											</lookup>
 										</binding>
-										<property name="text-overflow">ellipsize-end</property>
+										<property name="ellipsize">end</property>
 										<property name="hexpand">true</property>
 										<property name="xalign">0</property>
+									</object>
+								</child>
+								<child>
+									<object class="GtkLabel" id="hotkeyLabel">
+										<property name="valign">center</property>
+										<binding name="label">
+											<lookup name="hotkey" type="Zap">
+												<lookup name="zap">ZapZapItem</lookup>
+											</lookup>
+										</binding>
+										<binding name="visible">
+											<closure type="gboolean" function="isHotkeyNotEmpty">
+												<lookup name="hotkey" type="Zap">
+													<lookup name="zap">ZapZapItem</lookup>
+												</lookup>
+											</closure>
+										</binding>
+										<style>
+											<class name="dim-label"/>
+											<class name="caption"/>
+											<class name="hotkey"/>
+										</style>
 									</object>
 								</child>
 							</object>

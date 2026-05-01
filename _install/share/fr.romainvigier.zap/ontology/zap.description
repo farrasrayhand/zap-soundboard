@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2022 Romain Vigier <contact AT romainvigier.fr>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+@prefix dsc: <http://tracker.api.gnome.org/ontology/v3/dsc#> .
+
+<virtual-ontology-uri:zap.ontology> a dsc:Ontology ;
+    dsc:title "Zap ontology" ;
+    dsc:description "Tracker database schema for Zap data." ;
+
+    dsc:localPrefix "zap" ;
+    dsc:baseUrl "https://zap.romainvigier.fr#" ;
+    dsc:relativePath "./zap.ontology" ;
