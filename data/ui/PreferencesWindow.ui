@@ -28,6 +28,18 @@ SPDX-License-Identifier: GPL-3.0-or-later
 								</child>
 							</object>
 						</child>
+						<child>
+							<object class="AdwActionRow" id="hideStopButtonRow">
+								<property name="title" translatable="yes">Hide Stop Button</property>
+								<property name="subtitle" translatable="yes">Hide the immediate stop button and only use fade out.</property>
+								<property name="activatable-widget">hideStopButtonSwitch</property>
+								<child>
+									<object class="GtkSwitch" id="hideStopButtonSwitch">
+										<property name="valign">center</property>
+									</object>
+								</child>
+							</object>
+						</child>
 					</object>
 				</child>
 			</object>

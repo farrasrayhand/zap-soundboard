@@ -34,6 +34,7 @@ export class Config extends Service {
             version: 2,
             settings: {
                 safetyMode: globalThis.settings.get_boolean('safety-mode'),
+                hideStopButton: globalThis.settings.get_boolean('hide-stop-button'),
             },
             collections: [],
             groups: [],
@@ -152,6 +153,9 @@ export class Config extends Service {
             if (metadata.settings) {
                 if (metadata.settings.safetyMode !== undefined) {
                     globalThis.settings.set_boolean('safety-mode', metadata.settings.safetyMode);
+                }
+                if (metadata.settings.hideStopButton !== undefined) {
+                    globalThis.settings.set_boolean('hide-stop-button', metadata.settings.hideStopButton);
                 }
             }
 

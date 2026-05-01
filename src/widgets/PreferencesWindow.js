@@ -15,7 +15,7 @@ export class PreferencesWindow extends Adw.PreferencesWindow {
         GObject.registerClass({
             GTypeName: 'ZapPreferencesWindow',
             Template: 'resource:///fr/romainvigier/zap/ui/PreferencesWindow.ui',
-            InternalChildren: ['safetyModeSwitch'],
+            InternalChildren: ['safetyModeSwitch', 'hideStopButtonSwitch'],
         }, this);
     }
 
@@ -25,6 +25,13 @@ export class PreferencesWindow extends Adw.PreferencesWindow {
         globalThis.settings.bind(
             'safety-mode',
             this._safetyModeSwitch,
+            'active',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+
+        globalThis.settings.bind(
+            'hide-stop-button',
+            this._hideStopButtonSwitch,
             'active',
             Gio.SettingsBindFlags.DEFAULT
         );

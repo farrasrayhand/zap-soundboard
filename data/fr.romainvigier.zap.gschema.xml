@@ -23,5 +23,8 @@ SPDX-License-Identifier: GPL-3.0-or-later
 		<key name="safety-mode" type="b">
 			<default>false</default>
 		</key>
+		<key name="hide-stop-button" type="b">
+			<default>false</default>
+		</key>
 	</schema>
 </schemalist>

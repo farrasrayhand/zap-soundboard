@@ -41,7 +41,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 							<object class="GtkBox">
 								<property name="orientation">vertical</property>
 								<child>
-									<object class="GtkButton">
+									<object class="GtkButton" id="stopButton">
 										<signal name="clicked" handler="onStopButtonClicked"/>
 										<property name="tooltip-text" translatable="yes">Stop</property>
 										<property name="icon-name">fr.romainvigier.zap-stop-symbolic</property>
@@ -51,7 +51,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 									</object>
 								</child>
 								<child>
-									<object class="GtkButton">
+									<object class="GtkButton" id="fadeOutButton">
 										<signal name="clicked" handler="onFadeOutButtonClicked"/>
 										<property name="tooltip-text" translatable="yes">Fade out</property>
 										<property name="icon-name">fr.romainvigier.zap-fadeout-symbolic</property>

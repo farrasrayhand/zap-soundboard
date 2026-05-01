@@ -20,6 +20,12 @@ export class ZapItem extends Gtk.Widget {
     #stopButtonRevealer;
 
     /** @type {Gtk.Button} */
+    #stopButton;
+
+    /** @type {Gtk.Button} */
+    #fadeOutButton;
+
+    /** @type {Gtk.Button} */
     #playButton;
 
     /** @type {?string} */
@@ -34,7 +40,7 @@ export class ZapItem extends Gtk.Widget {
                 zap: GObject.ParamSpec.object('zap', 'Zap', 'Zap', GObject.ParamFlags.READWRITE, Zap),
                 playing: GObject.ParamSpec.boolean('playing', 'Playing', 'Playing', GObject.ParamFlags.READWRITE, false),
             },
-            InternalChildren: ['stopButtonRevealer', 'playButton'],
+            InternalChildren: ['stopButtonRevealer', 'stopButton', 'fadeOutButton', 'playButton'],
         }, this);
     }
 
@@ -56,11 +62,14 @@ export class ZapItem extends Gtk.Widget {
         this.playing = playing;
 
         this.#stopButtonRevealer = this._stopButtonRevealer;
+        this.#stopButton = this._stopButton;
+        this.#fadeOutButton = this._fadeOutButton;
         this.#playButton = this._playButton;
 
         this.#syncItemCssClass();
         this.#syncPlayingCssClass();
         this.#syncSafetyMode();
+        this.#syncStopButton();
 
         this.connect('notify::zap', () => this.#syncItemCssClass());
         this.connect('notify::playing', () => {
@@ -70,9 +79,25 @@ export class ZapItem extends Gtk.Widget {
 
         this.#playerConnections.push(
             globalThis.settings.connect('changed::safety-mode', () => this.#syncSafetyMode()),
+            globalThis.settings.connect('changed::hide-stop-button', () => this.#syncStopButton()),
             globalThis.player.connect('play-started', () => this.#syncSafetyMode()),
             globalThis.player.connect('play-stopped', () => this.#syncSafetyMode())
         );
+    }
+
+    /**
+     * Synchronize Stop button visibility.
+     */
+    #syncStopButton() {
+        if (!this.#stopButton || !this.#fadeOutButton)
+            return;
+        
+        const hideStop = globalThis.settings.get_boolean('hide-stop-button');
+        this.#stopButton.visible = !hideStop;
+        
+        // Make fade out button take full height if stop is hidden
+        this.#fadeOutButton.vexpand = hideStop;
+        this.#fadeOutButton.valign = hideStop ? Gtk.Align.FILL : Gtk.Align.CENTER;
     }
 
     /**
