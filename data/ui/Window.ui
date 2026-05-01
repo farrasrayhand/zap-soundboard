@@ -24,6 +24,16 @@ SPDX-License-Identifier: GPL-3.0-or-later
 						<property name="title-widget">
 							<object class="ZapCollectionsMenuButton" id="collectionsButton"/>
 						</property>
+						<child>
+							<object class="GtkButton">
+								<property name="tooltip-text" translatable="yes">New Group</property>
+								<property name="icon-name">fr.romainvigier.zap-add-symbolic</property>
+								<property name="action-name">win.add-group</property>
+								<style>
+									<class name="flat"/>
+								</style>
+							</object>
+						</child>
 						<child type="end">
 							<object class="GtkMenuButton">
 								<property name="tooltip-text" translatable="yes">Main Menu</property>

@@ -11,6 +11,7 @@ import Gst from 'gi://Gst';
 
 import { Application } from './classes/Application.js';
 import { Collection } from './classes/Collection.js';
+import { Group } from './classes/Group.js';
 import { Zap } from './classes/Zap.js';
 
 import { Collections } from './services/Collections.js';
@@ -51,6 +52,7 @@ function registerGObjects() {
     GObject.type_ensure(DBus);
     GObject.type_ensure(EditZapPopover);
     GObject.type_ensure(FileChooserButton);
+    GObject.type_ensure(Group);
     GObject.type_ensure(Player);
     GObject.type_ensure(ProgressBar);
     GObject.type_ensure(Service);

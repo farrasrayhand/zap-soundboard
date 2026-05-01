@@ -11,6 +11,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 		<file>main.js</file>
 		<file>classes/Application.js</file>
 		<file>classes/Collection.js</file>
+		<file>classes/Group.js</file>
 		<file>classes/Zap.js</file>
 		<file>enums/Color.js</file>
 		<file>services/Collections.js</file>

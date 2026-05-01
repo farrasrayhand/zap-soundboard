@@ -72,3 +72,18 @@ zap:groupName a rdf:Property;
     rdfs:domain zap:Zap;
     rdfs:range xsd:string;
     nrl:maxCardinality 1.
+
+zap:Group a rdfs:Class;
+    rdfs:subClassOf zap:Item;
+    rdfs:comment "A group of zaps";
+    nrl:domainIndex zap:uuid.
+
+zap:groupCollectionUuid a rdf:Property;
+    rdfs:domain zap:Group;
+    rdfs:range xsd:string;
+    nrl:maxCardinality 1.
+
+zap:groupPosition a rdf:Property;
+    rdfs:domain zap:Group;
+    rdfs:range xsd:integer;
+    nrl:maxCardinality 1.

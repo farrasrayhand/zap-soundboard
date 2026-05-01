@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import Adw from 'gi://Adw';
+import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';
 import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
@@ -85,6 +86,7 @@ export class Window extends Adw.ApplicationWindow {
 
         this.connect('notify::selected-collection', () => this.#refreshZaps());
         globalThis.zaps.connect('items-changed', () => this.#refreshZaps());
+        globalThis.zaps.connect('groups-changed', () => this.#refreshZaps());
         globalThis.zaps.connect('zap-updated', (zaps, zap, property) => {
             if (['groupName', 'position', 'collectionUuid'].includes(property))
                 this.#refreshZaps();
@@ -117,60 +119,95 @@ export class Window extends Adw.ApplicationWindow {
                 filteredZaps.push(zap);
         }
 
-        filteredZaps.sort((a, b) => a.position - b.position);
+        const filteredGroups = globalThis.zaps.groups.filter(g => g.collectionUuid === this.selectedCollection.uuid);
 
-        if (filteredZaps.length === 0) {
+        if (filteredZaps.length === 0 && filteredGroups.length === 0) {
             this.#zapsStack.visibleChildName = 'no-zaps';
             return;
         }
 
         this.#zapsStack.visibleChildName = 'zaps';
 
-        // Group Zaps
-        const groups = new Map();
-        filteredZaps.forEach(zap => {
-            const groupName = zap.groupName || '';
-            if (!groups.has(groupName))
-                groups.set(groupName, []);
-            groups.get(groupName).push(zap);
+        // Add Ungrouped Zaps if any
+        const ungroupedZaps = filteredZaps.filter(z => !z.groupName).sort((a, b) => a.position - b.position);
+        if (ungroupedZaps.length > 0) {
+            this.#addGroupToLayout('', ungroupedZaps);
+        }
+
+        // Add Persistent Groups
+        filteredGroups.sort((a, b) => a.position - b.position).forEach(group => {
+            const groupZaps = filteredZaps.filter(z => z.groupName === group.name).sort((a, b) => a.position - b.position);
+            this.#addGroupToLayout(group.name, groupZaps, group);
+        });
+    }
+
+    /**
+     * Helper to add a group and its Zaps to the layout.
+     * 
+     * @param {string} groupName Name.
+     * @param {Zap[]} zaps Zaps.
+     * @param {Group} group Persistent group object.
+     */
+    #addGroupToLayout(groupName, zaps, group = null) {
+        const separator = new ZapGroupSeparator({ groupName, group });
+        separator.margin_top = 12;
+        separator.margin_bottom = 6;
+        separator.margin_start = 12;
+        separator.margin_end = 12;
+        this.#zapsBox.append(separator);
+
+        const flowBox = new Gtk.FlowBox({
+            selection_mode: Gtk.SelectionMode.NONE,
+            max_children_per_line: 24,
+            min_children_per_line: 1,
+            row_spacing: 12,
+            column_spacing: 12,
+            margin_start: 12,
+            margin_end: 12,
+            margin_bottom: 6,
         });
 
-        groups.forEach((groupZaps, groupName) => {
-            // Add group separator
-            const separator = new ZapGroupSeparator({ groupName });
-            separator.margin_top = 12;
-            separator.margin_bottom = 6;
-            separator.margin_start = 12;
-            separator.margin_end = 12;
-            this.#zapsBox.append(separator);
+        zaps.forEach(zap => flowBox.append(new ZapItem({ zap })));
+        this.#zapsBox.append(flowBox);
+    }
 
-            // Add grid for Zaps in this group
-            const grid = new Gtk.FlowBox({
-                selection_mode: Gtk.SelectionMode.NONE,
-                max_children_per_line: 24,
-                min_children_per_line: 1,
-                row_spacing: 12,
-                column_spacing: 12,
-                margin_start: 12,
-                margin_end: 12,
-                margin_bottom: 12,
-            });
-
-            groupZaps.forEach(zap => {
-                const item = new ZapItem({ zap });
-                grid.append(item);
-            });
-
-            this.#zapsBox.append(grid);
+    /**
+     * Add a new group.
+     */
+    #addGroup() {
+        const dialog = new Adw.MessageDialog({
+            heading: _('New Group'),
+            body: _('Enter a name for the new group.'),
+            transient_for: this,
         });
+
+        const entry = new Gtk.Entry({
+            placeholder_text: _('Group Name'),
+            margin_top: 12,
+        });
+        dialog.set_extra_child(entry);
+
+        dialog.add_response('cancel', _('Cancel'));
+        dialog.add_response('add', _('Add'));
+        dialog.set_response_appearance('add', Adw.ResponseAppearance.SUGGESTED);
+        
+        dialog.connect('response', (d, response) => {
+            if (response === 'add' && entry.text) {
+                globalThis.zaps.addGroup({
+                    name: entry.text,
+                    collectionUuid: this.selectedCollection.uuid,
+                });
+            }
+        });
+        dialog.present();
     }
 
     /**
      * Close request virtual method.
      */
     vfunc_close_request() {
-        super.vfunc_close_request();
         this.#saveSettings();
+        super.vfunc_close_request();
         this.run_dispose();
     }
 
@@ -226,6 +263,13 @@ export class Window extends Adw.ApplicationWindow {
                 parameterType: null,
                 callback: () => {
                     this.#import();
+                },
+            },
+            {
+                name: 'add-group',
+                parameterType: null,
+                callback: () => {
+                    this.#addGroup();
                 },
             },
         ].forEach(({ name, parameterType, callback }) => {
@@ -364,8 +408,40 @@ export class Window extends Adw.ApplicationWindow {
 
         dialog.connect('response', async (d, response) => {
             if (response === Gtk.ResponseType.ACCEPT) {
+                const file = d.get_file();
                 try {
-                    await globalThis.config.import(d.get_file());
+                    const metadata = await globalThis.config.getMetadata(file);
+                    
+                    // Check for name conflicts
+                    const existingNames = [];
+                    for (let i = 0; i < globalThis.collections.get_n_items(); i++) {
+                        existingNames.push(globalThis.collections.get_item(i).name);
+                    }
+
+                    const conflicts = metadata.collections.filter(c => existingNames.includes(c.name));
+
+                    if (conflicts.length > 0) {
+                        const confirm = new Adw.MessageDialog({
+                            heading: _('Conflicts Detected'),
+                            body: _('Some collections being imported already exist. Would you like to replace them or keep both?'),
+                            transient_for: this,
+                        });
+                        confirm.add_response('cancel', _('Cancel'));
+                        confirm.add_response('keep', _('Keep Both'));
+                        confirm.add_response('replace', _('Replace Existing'));
+                        confirm.set_response_appearance('replace', Adw.ResponseAppearance.DESTRUCTIVE);
+
+                        confirm.connect('response', async (c, res) => {
+                            if (res === 'replace') {
+                                await globalThis.config.import(file, true);
+                            } else if (res === 'keep') {
+                                await globalThis.config.import(file, false);
+                            }
+                        });
+                        confirm.present();
+                    } else {
+                        await globalThis.config.import(file);
+                    }
                 } catch (e) {
                     this.#showError(_('Import failed'), e.message);
                 }

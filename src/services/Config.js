@@ -10,7 +10,7 @@ import { Color } from '../enums/Color.js';
 import { Service } from './Service.js';
 
 /**
- * Handles export and import of Zap configuration and sounds.
+ * Handles export and import of Zap configuration, groups and sounds.
  */
 export class Config extends Service {
 
@@ -19,7 +19,7 @@ export class Config extends Service {
     }
 
     /**
-     * Export all collections and zaps to a file.
+     * Export all collections, groups and zaps to a file.
      *
      * @param {Gio.File} file Destination file.
      */
@@ -31,11 +31,13 @@ export class Config extends Service {
         soundsDir.make_directory(null);
 
         const metadata = {
-            version: 1,
+            version: 2, // Incremented version
             collections: [],
+            groups: [],
             zaps: [],
         };
 
+        // Export Collections
         for (let i = 0; i < globalThis.collections.get_n_items(); i++) {
             const col = globalThis.collections.get_item(i);
             metadata.collections.push({
@@ -44,6 +46,17 @@ export class Config extends Service {
             });
         }
 
+        // Export Persistent Groups
+        globalThis.zaps.groups.forEach(group => {
+            metadata.groups.push({
+                uuid: group.uuid,
+                name: group.name,
+                collectionUuid: group.collectionUuid,
+                position: group.position,
+            });
+        });
+
+        // Export Zaps
         for (let i = 0; i < globalThis.zaps.get_n_items(); i++) {
             const zap = globalThis.zaps.get_item(i);
             const filename = zap.file.get_basename();
@@ -56,6 +69,7 @@ export class Config extends Service {
                 loop: zap.loop,
                 volume: zap.volume,
                 position: zap.position,
+                groupName: zap.groupName || '', // Include group assignment
             });
 
             // Copy sound file
@@ -87,12 +101,36 @@ export class Config extends Service {
     }
 
     /**
-     * Import collections and zaps from a file.
+     * Get metadata from an export file without importing everything.
      *
      * @param {Gio.File} file Source file.
+     * @returns {Promise<object>} Metadata.
      */
-    async import(file) {
-        console.debug(`Importing configuration from ${file.get_path()}...`);
+    async getMetadata(file) {
+        const tempDir = GLib.dir_make_tmp('zap-preview-XXXXXX');
+        const tempFile = Gio.File.new_for_path(tempDir);
+
+        try {
+            const tarPath = file.get_path();
+            // Only extract metadata.json
+            await this.#runCommand(['tar', '-xzf', tarPath, '-C', tempDir, './metadata.json']);
+
+            const metadataFile = tempFile.get_child('metadata.json');
+            const [ok, contents] = metadataFile.load_contents(null);
+            return JSON.parse(new TextDecoder().decode(contents));
+        } finally {
+            this.#deleteRecursive(tempFile);
+        }
+    }
+
+    /**
+     * Import collections, groups and zaps from a file.
+     *
+     * @param {Gio.File} file Source file.
+     * @param {boolean} replace Whether to replace collections with same name.
+     */
+    async import(file, replace = false) {
+        console.debug(`Importing configuration from ${file.get_path()}... (replace: ${replace})`);
         const tempDir = GLib.dir_make_tmp('zap-import-XXXXXX');
         const tempFile = Gio.File.new_for_path(tempDir);
 
@@ -107,10 +145,42 @@ export class Config extends Service {
             const [ok, contents] = metadataFile.load_contents(null);
             const metadata = JSON.parse(new TextDecoder().decode(contents));
 
-            const colMap = new Map(); // Old UUID -> New Collection
+            const colMap = new Map(); // Old Collection UUID -> New Collection Object
+
             for (const colData of metadata.collections) {
-                const collection = globalThis.collections.add({ name: colData.name });
+                let collection = null;
+
+                // Handle replacement
+                if (replace) {
+                    for (let i = 0; i < globalThis.collections.get_n_items(); i++) {
+                        const existing = globalThis.collections.get_item(i);
+                        if (existing.name === colData.name) {
+                            // Clear existing content instead of removing the collection
+                            // This prevents auto-recreation of default collection
+                            globalThis.zaps.removeAllOfCollection({ collection: existing });
+                            collection = existing;
+                            break;
+                        }
+                    }
+                }
+
+                if (!collection) {
+                    collection = globalThis.collections.add({ name: colData.name });
+                }
                 colMap.set(colData.uuid, collection);
+            }
+
+            // Import Groups if present (version 2+)
+            if (metadata.groups) {
+                for (const groupData of metadata.groups) {
+                    const collection = colMap.get(groupData.collectionUuid);
+                    if (collection) {
+                        globalThis.zaps.addGroup({
+                            name: groupData.name,
+                            collectionUuid: collection.uuid,
+                        });
+                    }
+                }
             }
 
             const soundsDir = tempFile.get_child('sounds');
@@ -126,6 +196,7 @@ export class Config extends Service {
                             color: Color.fromId(zapData.color),
                             loop: zapData.loop,
                             volume: zapData.volume,
+                            groupName: zapData.groupName || '',
                         });
                     }
                 }
