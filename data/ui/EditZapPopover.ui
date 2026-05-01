@@ -28,7 +28,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 				</child>
 				<child>
 					<object class="GtkEntry" id="groupEntry">
-						<signal name="changed" handler="onGroupEntryChanged"/>
+						<signal name="activate" handler="onGroupEntryActivated"/>
 						<property name="placeholder-text" translatable="yes">Group</property>
 						<property name="tooltip-text" translatable="yes">Group</property>
 					</object>

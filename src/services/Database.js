@@ -11,7 +11,12 @@ import { Service } from './Service.js';
 
 
 const DATABASE_PATH = Gio.File.new_for_path(GLib.build_filenamev([GLib.get_user_data_dir(), pkg.name, 'db']));
-const ONTOLOGY_PATH = Gio.File.new_for_path(GLib.build_filenamev([pkg.pkgdatadir, 'ontology']));
+let ONTOLOGY_PATH = Gio.File.new_for_path(GLib.build_filenamev([pkg.pkgdatadir, 'ontology']));
+
+if (!ONTOLOGY_PATH.query_exists(null)) {
+    // Try source directory fallback for development
+    ONTOLOGY_PATH = Gio.File.new_for_path(GLib.build_filenamev([GLib.get_current_dir(), 'data', 'tracker']));
+}
 
 
 /**

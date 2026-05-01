@@ -177,6 +177,15 @@ export class ZapItem extends Gtk.Widget {
             return false;
         if (value.collectionUuid !== this.zap.collectionUuid)
             return false;
+
+        // Change group if different
+        if (value.groupName !== this.zap.groupName) {
+            globalThis.zaps.changeGroupName({
+                zap: value,
+                groupName: this.zap.groupName,
+            });
+        }
+
         globalThis.zaps.changePosition({
             zap: value,
             position: this.zap.position,

@@ -12,6 +12,8 @@ import { Zap } from '../classes/Zap.js';
 
 import { AddZapPopup } from './AddZapPopup.js';
 import { CollectionsMenuButton } from './CollectionsMenuButton.js';
+import { ZapGroupSeparator } from './ZapGroupSeparator.js';
+import { ZapItem } from './ZapItem.js';
 
 
 /**
@@ -83,7 +85,10 @@ export class Window extends Adw.ApplicationWindow {
 
         this.connect('notify::selected-collection', () => this.#refreshZaps());
         globalThis.zaps.connect('items-changed', () => this.#refreshZaps());
-        globalThis.zaps.connect('zap-updated', () => this.#refreshZaps());
+        globalThis.zaps.connect('zap-updated', (zaps, zap, property) => {
+            if (['groupName', 'position', 'collectionUuid'].includes(property))
+                this.#refreshZaps();
+        });
 
         this.#refreshZaps();
 
@@ -253,7 +258,8 @@ export class Window extends Adw.ApplicationWindow {
         globalThis.settings.set_uint('window-width', this.defaultWidth);
         globalThis.settings.set_uint('window-height', this.defaultHeight);
         globalThis.settings.set_boolean('window-maximized', this.maximized);
-        globalThis.settings.set_string('last-selected-collection', this.selectedCollection.uuid);
+        if (this.selectedCollection)
+            globalThis.settings.set_string('last-selected-collection', this.selectedCollection.uuid);
     }
 
     /**

@@ -127,7 +127,7 @@ export class Zap extends GObject.Object {
          *
          * @type {string}
          */
-        this.groupName = groupName;
+        this.groupName = groupName || '';
     }
 
     /**
@@ -146,7 +146,7 @@ export class Zap extends GObject.Object {
             playing: new GLib.Variant('b', this.playing),
             progress: new GLib.Variant('d', this.progress),
             position: new GLib.Variant('i', this.position),
-            groupName: new GLib.Variant('s', this.groupName),
+            groupName: new GLib.Variant('s', this.groupName || ''),
         };
     }
 

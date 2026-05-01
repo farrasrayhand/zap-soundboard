@@ -83,17 +83,18 @@ export class EditZapPopover extends Gtk.Popover {
     }
 
     /**
-     * Callback when the group entry changes.
+     * Callback when the group entry is activated.
      *
      * @param {Gtk.Entry} entry Group entry.
      */
-    onGroupEntryChanged(entry) {
+    onGroupEntryActivated(entry) {
         if (!this.zap)
             return;
         globalThis.zaps.changeGroupName({
             zap: this.zap,
             groupName: entry.text,
         });
+        this.popdown();
     }
 
     /**

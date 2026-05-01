@@ -11,7 +11,7 @@ import { Zap } from '../classes/Zap.js';
 /**
  * Visual separator for groups.
  */
-export class ZapGroupSeparator extends Gtk.Widget {
+export class ZapGroupSeparator extends Gtk.Box {
 
     static {
         GObject.registerClass({
@@ -21,14 +21,13 @@ export class ZapGroupSeparator extends Gtk.Widget {
     }
 
     constructor({ groupName = '', ...params } = {}) {
-        super(params);
-
-        this.groupName = groupName;
-
-        const box = new Gtk.Box({
+        super({
             orientation: Gtk.Orientation.HORIZONTAL,
             spacing: 12,
+            ...params,
         });
+
+        this.groupName = groupName;
 
         const label = new Gtk.Label({
             label: groupName || _('No Group'),
@@ -43,16 +42,14 @@ export class ZapGroupSeparator extends Gtk.Widget {
             valign: Gtk.Align.CENTER,
         });
 
-        box.append(label);
-        box.append(separator);
-
-        this.set_child(box);
-        this.set_layout_manager(new Gtk.BinLayout());
+        this.append(label);
+        this.append(separator);
 
         const dropTarget = new Gtk.DropTarget({
             actions: Gdk.DragAction.MOVE,
-            formats: Gdk.ContentFormats.new_for_gtype(Zap),
         });
+        dropTarget.set_gtypes([Zap.$gtype]);
+
         dropTarget.connect('drop', (target, value, x, y) => {
             if (value instanceof Zap) {
                 globalThis.zaps.changeGroupName({

@@ -28,7 +28,11 @@ class CollectionsService {
      * Build the D-Bus interface.
      */
     #buildInterface() {
-        const file = Gio.File.new_for_path(GLib.build_filenamev([pkg.datadir, 'dbus-1', 'interfaces', 'fr.romainvigier.zap.Collections.xml']));
+        let file = Gio.File.new_for_path(GLib.build_filenamev([pkg.datadir, 'dbus-1', 'interfaces', 'fr.romainvigier.zap.Collections.xml']));
+        if (!file.query_exists(null)) {
+            // Try source directory fallback for development
+            file = Gio.File.new_for_path(GLib.build_filenamev([GLib.get_current_dir(), 'data', 'dbus', 'fr.romainvigier.zap.Collections.xml']));
+        }
         const [ok, bytes] = file.load_contents(null);
         const ifaceXml = new TextDecoder().decode(bytes);
         this.#iface = Gio.DBusExportedObject.wrapJSObject(ifaceXml, this);
@@ -185,7 +189,11 @@ class ZapService {
 
     /** */
     constructor() {
-        const file = Gio.File.new_for_path(GLib.build_filenamev([pkg.datadir, 'dbus-1', 'interfaces', 'fr.romainvigier.zap.Zaps.xml']));
+        let file = Gio.File.new_for_path(GLib.build_filenamev([pkg.datadir, 'dbus-1', 'interfaces', 'fr.romainvigier.zap.Zaps.xml']));
+        if (!file.query_exists(null)) {
+            // Try source directory fallback for development
+            file = Gio.File.new_for_path(GLib.build_filenamev([GLib.get_current_dir(), 'data', 'dbus', 'fr.romainvigier.zap.Zaps.xml']));
+        }
         const [ok, bytes] = file.load_contents(null);
         const ifaceXml = new TextDecoder().decode(bytes);
         this.#iface = Gio.DBusExportedObject.wrapJSObject(ifaceXml, this);
