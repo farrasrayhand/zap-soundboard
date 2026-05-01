@@ -32,10 +32,18 @@ export class Config extends Service {
         soundsDir.make_directory(null);
 
         const metadata = {
-            version: 2,
+            version: 4,
             settings: {
                 safetyMode: globalThis.settings.get_boolean('safety-mode'),
                 hideStopButton: globalThis.settings.get_boolean('hide-stop-button'),
+                enablePause: globalThis.settings.get_boolean('enable-pause'),
+                fadeoutDuration: globalThis.settings.get_double('fadeout-duration'),
+                stopHotkey: globalThis.settings.get_string('stop-hotkey'),
+                fadeoutHotkey: globalThis.settings.get_string('fadeout-hotkey'),
+                windowWidth: globalThis.settings.get_uint('window-width'),
+                windowHeight: globalThis.settings.get_uint('window-height'),
+                windowMaximized: globalThis.settings.get_boolean('window-maximized'),
+                lastSelectedCollection: globalThis.settings.get_string('last-selected-collection'),
             },
             collections: [],
             groups: [],
@@ -75,6 +83,7 @@ export class Config extends Service {
                 volume: zap.volume,
                 position: zap.position,
                 groupName: zap.groupName || '', // Include group assignment
+                hotkey: zap.hotkey || '',
             });
 
             // Copy sound file
@@ -158,6 +167,30 @@ export class Config extends Service {
                 if (metadata.settings.hideStopButton !== undefined) {
                     globalThis.settings.set_boolean('hide-stop-button', metadata.settings.hideStopButton);
                 }
+                if (metadata.settings.enablePause !== undefined) {
+                    globalThis.settings.set_boolean('enable-pause', metadata.settings.enablePause);
+                }
+                if (metadata.settings.fadeoutDuration !== undefined) {
+                    globalThis.settings.set_double('fadeout-duration', metadata.settings.fadeoutDuration);
+                }
+                if (metadata.settings.stopHotkey !== undefined) {
+                    globalThis.settings.set_string('stop-hotkey', metadata.settings.stopHotkey);
+                }
+                if (metadata.settings.fadeoutHotkey !== undefined) {
+                    globalThis.settings.set_string('fadeout-hotkey', metadata.settings.fadeoutHotkey);
+                }
+                if (metadata.settings.windowWidth !== undefined) {
+                    globalThis.settings.set_uint('window-width', metadata.settings.windowWidth);
+                }
+                if (metadata.settings.windowHeight !== undefined) {
+                    globalThis.settings.set_uint('window-height', metadata.settings.windowHeight);
+                }
+                if (metadata.settings.windowMaximized !== undefined) {
+                    globalThis.settings.set_boolean('window-maximized', metadata.settings.windowMaximized);
+                }
+                if (metadata.settings.lastSelectedCollection !== undefined) {
+                    globalThis.settings.set_string('last-selected-collection', metadata.settings.lastSelectedCollection);
+                }
             }
 
             const colMap = new Map(); // Old Collection UUID -> New Collection Object
@@ -180,7 +213,10 @@ export class Config extends Service {
                 }
 
                 if (!collection) {
-                    collection = globalThis.collections.add({ name: colData.name });
+                    collection = globalThis.collections.add({
+                        name: colData.name,
+                        uuid: colData.uuid,
+                    });
                 }
                 colMap.set(colData.uuid, collection);
             }
@@ -193,6 +229,8 @@ export class Config extends Service {
                         globalThis.zaps.addGroup({
                             name: groupData.name,
                             collectionUuid: collection.uuid,
+                            uuid: groupData.uuid,
+                            position: groupData.position,
                         });
                     }
                 }
@@ -212,6 +250,9 @@ export class Config extends Service {
                             loop: zapData.loop,
                             volume: zapData.volume,
                             groupName: zapData.groupName || '',
+                            hotkey: zapData.hotkey || '',
+                            uuid: zapData.uuid,
+                            position: zapData.position,
                         });
                     }
                 }
@@ -262,6 +303,42 @@ export class Config extends Service {
                 let childInfo;
                 while ((childInfo = enumerator.next_file(null)) !== null) {
                     const child = file.get_child(childInfo.get_name());
+                    this.#deleteRecursive(child);
+                }
+            }
+            file.delete(null);
+        } catch (e) {
+            console.warn(`Failed to delete ${file.get_path()}: ${e.message}`);
+        }
+    }
+
+}
+ild = file.get_child(childInfo.get_name());
+                    this.#deleteRecursive(child);
+                }
+            }
+            file.delete(null);
+        } catch (e) {
+            console.warn(`Failed to delete ${file.get_path()}: ${e.message}`);
+        }
+    }
+
+}
+ll);
+                let childInfo;
+                while ((childInfo = enumerator.next_file(null)) !== null) {
+                    const child = file.get_child(childInfo.get_name());
+                    this.#deleteRecursive(child);
+                }
+            }
+            file.delete(null);
+        } catch (e) {
+            console.warn(`Failed to delete ${file.get_path()}: ${e.message}`);
+        }
+    }
+
+}
+ild = file.get_child(childInfo.get_name());
                     this.#deleteRecursive(child);
                 }
             }

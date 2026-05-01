@@ -150,11 +150,11 @@ export class Collections extends Service {
      * @param {string} params.name Name of the collection.
      * @returns {Collection} The added collection.
      */
-    add({ name }) {
+    add({ name, uuid = null }) {
         console.debug(`Adding new "${name}" collection...`);
 
         const collection = new Collection({
-            uuid: GLib.uuid_string_random(),
+            uuid: uuid || GLib.uuid_string_random(),
             name,
         });
 

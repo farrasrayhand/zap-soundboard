@@ -157,19 +157,19 @@ export class Zaps extends Service {
         return zap;
     }
 
-    addGroup({ name, collectionUuid }) {
+    addGroup({ name, collectionUuid, uuid = null, position = null }) {
         console.debug(`Adding new group "${name}"...`);
-        const uuid = GLib.uuid_string_random();
-        const position = this.#groups.filter(g => g.collectionUuid === collectionUuid).length;
+        const groupUuid = uuid || GLib.uuid_string_random();
+        const groupPosition = position !== null ? position : this.#groups.filter(g => g.collectionUuid === collectionUuid).length;
         
-        const group = new Group({ uuid, name, collectionUuid, position });
+        const group = new Group({ uuid: groupUuid, name, collectionUuid, position: groupPosition });
         
         const resource = Tracker.Resource.new(null);
         resource.set_uri('rdf:type', 'zap:Group');
-        resource.set_string('zap:uuid', uuid);
+        resource.set_string('zap:uuid', groupUuid);
         resource.set_string('zap:name', name);
         resource.set_string('zap:groupCollectionUuid', collectionUuid);
-        resource.set_int('zap:groupPosition', position);
+        resource.set_int('zap:groupPosition', groupPosition);
         globalThis.database.batch([resource]);
         
         this.#groups.push(group);
@@ -209,19 +209,19 @@ export class Zaps extends Service {
         this.emit('groups-changed');
     }
 
-    add({ name, collection, uri, color = Color.GRAY, loop = false, volume = 1, groupName = '', hotkey = '' }) {
+    add({ name, collection, uri, color = Color.GRAY, loop = false, volume = 1, groupName = '', hotkey = '', uuid = null, position = null }) {
         const originalFile = Gio.File.new_for_uri(uri);
         if (!originalFile.query_exists(this.#cancellable))
             throw new Error(`File '${uri}' does not exist.`);
-        const uuid = GLib.uuid_string_random();
+        const zapUuid = uuid || GLib.uuid_string_random();
         const originalFileName = originalFile.get_basename();
         const extension = originalFileName.substring(originalFileName.lastIndexOf('.') + 1) || originalFileName;
-        const file = ZAPS_DIR.get_child(`${uuid}.${extension}`);
+        const file = ZAPS_DIR.get_child(`${zapUuid}.${extension}`);
         originalFile.copy(file, Gio.FileCopyFlags.NONE, this.#cancellable, null);
 
         const zap = new Zap({
-            uuid, name, collectionUuid: collection.uuid, file, color, loop, volume,
-            position: this.#getTotalInCollection(collection.uuid),
+            uuid: zapUuid, name, collectionUuid: collection.uuid, file, color, loop, volume,
+            position: position !== null ? position : this.#getTotalInCollection(collection.uuid),
             groupName,
             hotkey,
         });

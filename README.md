@@ -16,7 +16,7 @@ This project is a fork of the original [Zap](https://gitlab.com/rmnvgr/zap) by R
 
 - **Persistent Grouping System**: Create, rename, and delete groups to organize your Zaps. Groups are saved permanently and support drag-and-drop organization.
 - **Preferences & Safety Mode**: New settings window with a "Safety Mode" to prevent accidental overlapping and a "Hide Stop Button" option for a cleaner, fade-only experience.
-- **Improved Import/Export**: Back up everything (collections, groups, sounds, and settings) into a `.zap` archive. Includes duplicate detection and full settings synchronization.
+- **Seamless Migration (Import/Export)**: Back up your entire setup (collections, groups, sounds, global hotkeys, and window settings) into a `.zap` archive. Everything is preserved, including layout positions and UUIDs, for a hassle-free transition between different PCs.
 - **Expanded Color Palette**: 18 beautiful colors optimized for Dark Mode and accessibility.
 - **Linux Installation Scripts**: Included `install-linux.sh` and `uninstall-linux.sh` for easy setup on Linux systems without Flatpak.
 - **Enhanced Stability**: Optimized UI refresh logic, fixed memory corruption issues, and improved performance.
