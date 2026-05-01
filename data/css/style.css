@@ -163,3 +163,12 @@ add-zap-popup headerbar {
 .add-zap-form {
 	padding: 8px;
 }
+
+group-separator {
+	font-weight: bold;
+}
+
+group-separator label {
+	margin-left: 6px;
+	margin-right: 6px;
+}

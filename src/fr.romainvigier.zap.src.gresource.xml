@@ -29,6 +29,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 		<file>widgets/FileChooserButton.js</file>
 		<file>widgets/ProgressBar.js</file>
 		<file>widgets/Window.js</file>
+		<file>widgets/ZapGroupSeparator.js</file>
 		<file>widgets/ZapItem.js</file>
 	</gresource>
 </gresources>

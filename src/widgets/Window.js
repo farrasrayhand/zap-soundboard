@@ -31,6 +31,8 @@ export class Window extends Adw.ApplicationWindow {
     #collectionsButton;
     /** @type {Gtk.Stack} */
     #zapsStack;
+    /** @type {Gtk.Box} */
+    #zapsBox;
 
     static {
         GObject.registerClass({
@@ -41,7 +43,7 @@ export class Window extends Adw.ApplicationWindow {
                 collections: GObject.ParamSpec.object('collections', 'Collections', 'Collections', GObject.ParamFlags.READWRITE, Gio.ListModel),
                 zaps: GObject.ParamSpec.object('zaps', 'Zaps', 'Zaps', GObject.ParamFlags.READWRITE, Gio.ListModel),
             },
-            InternalChildren: ['aboutWindow', 'addZapPopup', 'addZapPopupOverlay', 'collectionsButton', 'zapsStack'],
+            InternalChildren: ['aboutWindow', 'addZapPopup', 'addZapPopupOverlay', 'collectionsButton', 'zapsStack', 'zapsBox'],
         }, this);
     }
 
@@ -70,6 +72,7 @@ export class Window extends Adw.ApplicationWindow {
         this.#addZapPopupOverlay = this._addZapPopupOverlay;
         this.#collectionsButton = this._collectionsButton;
         this.#zapsStack = this._zapsStack;
+        this.#zapsBox = this._zapsBox;
 
         this.#setupCollections();
         this.#setupActions();
@@ -78,8 +81,83 @@ export class Window extends Adw.ApplicationWindow {
         this.#addZapPopupOverlay.set_clip_overlay(this.#addZapPopup, false);
         this.#addZapPopupOverlay.set_measure_overlay(this.#addZapPopup, true);
 
+        this.connect('notify::selected-collection', () => this.#refreshZaps());
+        globalThis.zaps.connect('items-changed', () => this.#refreshZaps());
+        globalThis.zaps.connect('zap-updated', () => this.#refreshZaps());
+
+        this.#refreshZaps();
+
         if (globalThis.devel)
             this.add_css_class('devel');
+    }
+
+    /**
+     * Refresh the Zaps display.
+     */
+    #refreshZaps() {
+        if (!this.#zapsBox || !this.selectedCollection)
+            return;
+
+        // Clear current content
+        let child = this.#zapsBox.get_first_child();
+        while (child) {
+            this.#zapsBox.remove(child);
+            child = this.#zapsBox.get_first_child();
+        }
+
+        const filteredZaps = [];
+        for (let i = 0; i < globalThis.zaps.get_n_items(); i++) {
+            const zap = globalThis.zaps.get_item(i);
+            if (zap.collectionUuid === this.selectedCollection.uuid)
+                filteredZaps.push(zap);
+        }
+
+        filteredZaps.sort((a, b) => a.position - b.position);
+
+        if (filteredZaps.length === 0) {
+            this.#zapsStack.visibleChildName = 'no-zaps';
+            return;
+        }
+
+        this.#zapsStack.visibleChildName = 'zaps';
+
+        // Group Zaps
+        const groups = new Map();
+        filteredZaps.forEach(zap => {
+            const groupName = zap.groupName || '';
+            if (!groups.has(groupName))
+                groups.set(groupName, []);
+            groups.get(groupName).push(zap);
+        });
+
+        groups.forEach((groupZaps, groupName) => {
+            // Add group separator
+            const separator = new ZapGroupSeparator({ groupName });
+            separator.margin_top = 12;
+            separator.margin_bottom = 6;
+            separator.margin_start = 12;
+            separator.margin_end = 12;
+            this.#zapsBox.append(separator);
+
+            // Add grid for Zaps in this group
+            const grid = new Gtk.FlowBox({
+                selection_mode: Gtk.SelectionMode.NONE,
+                max_children_per_line: 24,
+                min_children_per_line: 1,
+                row_spacing: 12,
+                column_spacing: 12,
+                margin_start: 12,
+                margin_end: 12,
+                margin_bottom: 12,
+            });
+
+            groupZaps.forEach(zap => {
+                const item = new ZapItem({ zap });
+                grid.append(item);
+            });
+
+            this.#zapsBox.append(grid);
+        });
     }
 
     /**

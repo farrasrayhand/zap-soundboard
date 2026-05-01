@@ -69,6 +69,12 @@ SPDX-License-Identifier: GPL-3.0-or-later
 											</object>
 										</child>
 										<child>
+											<object class="GtkEntry" id="groupEntry">
+												<property name="placeholder-text" translatable="yes">Group (Optional)</property>
+												<property name="tooltip-text" translatable="yes">Group</property>
+											</object>
+										</child>
+										<child>
 											<object class="ZapColorChooser" id="colorChooser"/>
 										</child>
 										<child>

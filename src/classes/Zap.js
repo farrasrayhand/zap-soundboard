@@ -28,6 +28,7 @@ export class Zap extends GObject.Object {
                 playing: GObject.ParamSpec.boolean('playing', 'Playing', 'Playing', GObject.ParamFlags.READWRITE, false),
                 progress: GObject.ParamSpec.double('progress', 'Progress', 'Progress', GObject.ParamFlags.READWRITE, 0.0, 1.0, 0.0),
                 position: GObject.ParamSpec.uint('position', 'Position', 'Position', GObject.ParamFlags.READWRITE, 0, GLib.MAXUINT32, 0),
+                groupName: GObject.ParamSpec.string('group-name', 'Group Name', 'Group Name', GObject.ParamFlags.READWRITE, ''),
             },
         }, this);
     }
@@ -44,6 +45,7 @@ export class Zap extends GObject.Object {
      * @param {boolean} params.playing Playing state.
      * @param {number} params.progress Progress, between 0 and 1.
      * @param {number} params.position Position in the collection, an unsigned integer.
+     * @param {string} params.groupName Name of the group.
      */
     constructor({
         uuid = '',
@@ -56,6 +58,7 @@ export class Zap extends GObject.Object {
         playing = false,
         progress = 0,
         position = 0,
+        groupName = '',
         ...params
     } = {}) {
         super(params);
@@ -119,6 +122,12 @@ export class Zap extends GObject.Object {
          * @type {number}
          */
         this.position = position;
+        /**
+         * Name of the group the Zap belongs to.
+         *
+         * @type {string}
+         */
+        this.groupName = groupName;
     }
 
     /**
@@ -137,6 +146,7 @@ export class Zap extends GObject.Object {
             playing: new GLib.Variant('b', this.playing),
             progress: new GLib.Variant('d', this.progress),
             position: new GLib.Variant('i', this.position),
+            groupName: new GLib.Variant('s', this.groupName),
         };
     }
 

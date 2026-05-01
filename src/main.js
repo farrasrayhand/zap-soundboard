@@ -30,6 +30,7 @@ import { EditZapPopover } from './widgets/EditZapPopover.js';
 import { FileChooserButton } from './widgets/FileChooserButton.js';
 import { ProgressBar } from './widgets/ProgressBar.js';
 import { Window } from './widgets/Window.js';
+import { ZapGroupSeparator } from './widgets/ZapGroupSeparator.js';
 import { ZapItem } from './widgets/ZapItem.js';
 
 
@@ -55,6 +56,7 @@ function registerGObjects() {
     GObject.type_ensure(Service);
     GObject.type_ensure(Window);
     GObject.type_ensure(Zap);
+    GObject.type_ensure(ZapGroupSeparator);
     GObject.type_ensure(ZapItem);
     GObject.type_ensure(Zaps);
 }

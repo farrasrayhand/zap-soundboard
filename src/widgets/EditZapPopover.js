@@ -19,6 +19,8 @@ export class EditZapPopover extends Gtk.Popover {
 
     /** @type {Gtk.Entry} */
     #nameEntry;
+    /** @type {Gtk.Entry} */
+    #groupEntry;
 
     static {
         GObject.registerClass({
@@ -28,7 +30,7 @@ export class EditZapPopover extends Gtk.Popover {
                 zap: GObject.ParamSpec.object('zap', 'Zap', 'Zap', GObject.ParamFlags.READWRITE, Zap),
                 collections: GObject.ParamSpec.object('collections', 'Collections', 'Collections', GObject.ParamFlags.READWRITE, Gio.ListModel),
             },
-            InternalChildren: ['nameEntry'],
+            InternalChildren: ['nameEntry', 'groupEntry'],
         }, this);
     }
 
@@ -46,6 +48,7 @@ export class EditZapPopover extends Gtk.Popover {
         this.collections = collections;
 
         this.#nameEntry = this._nameEntry;
+        this.#groupEntry = this._groupEntry;
     }
 
     /**
@@ -57,6 +60,7 @@ export class EditZapPopover extends Gtk.Popover {
         if (!this.zap)
             return;
         this.#nameEntry.text = this.zap.name;
+        this.#groupEntry.text = this.zap.groupName || '';
     }
 
     /**
@@ -65,6 +69,8 @@ export class EditZapPopover extends Gtk.Popover {
      * @param {Gtk.Entry} entry Name entry.
      */
     onNameEntryChanged(entry) {
+        if (!this.zap)
+            return;
         if (!entry.text) {
             entry.add_css_class('error');
             return;
@@ -73,6 +79,20 @@ export class EditZapPopover extends Gtk.Popover {
         globalThis.zaps.rename({
             zap: this.zap,
             name: entry.text,
+        });
+    }
+
+    /**
+     * Callback when the group entry changes.
+     *
+     * @param {Gtk.Entry} entry Group entry.
+     */
+    onGroupEntryChanged(entry) {
+        if (!this.zap)
+            return;
+        globalThis.zaps.changeGroupName({
+            zap: this.zap,
+            groupName: entry.text,
         });
     }
 

@@ -8,6 +8,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 <interface>
 	<template class="ZapWindow">
+		<style>
+			<class name="zap-window"/>
+		</style>
 		<binding name="title">
 			<lookup name="name" type="ZapCollection">
 				<lookup name="selected-collection">ZapWindow</lookup>
@@ -80,49 +83,11 @@ SPDX-License-Identifier: GPL-3.0-or-later
 														<property name="hscrollbar-policy">never</property>
 														<property name="propagate-natural-height">true</property>
 														<property name="child">
-															<object class="GtkGridView">
-																<property name="max-columns">24</property>
-																<property name="model">
-																	<object class="GtkNoSelection">
-																		<property name="model">
-																			<object class="GtkSortListModel">
-																				<property name="model">
-																					<object class="GtkFilterListModel">
-																						<signal name="items-changed" handler="onZapsModelItemsChanged"/>
-																						<property name="model" bind-source="ZapWindow" bind-property="zaps"/>
-																						<property name="filter">
-																							<object class="GtkStringFilter">
-																								<property name="match-mode">exact</property>
-																								<property name="expression">
-																									<lookup name="collection-uuid" type="Zap"/>
-																								</property>
-																								<binding name="search">
-																									<lookup name="uuid" type="ZapCollection">
-																										<lookup name="selected-collection">ZapWindow</lookup>
-																									</lookup>
-																								</binding>
-																							</object>
-																						</property>
-																					</object>
-																				</property>
-																				<property name="sorter">
-																					<object class="GtkNumericSorter">
-																						<property name="expression">
-																							<lookup name="position" type="Zap"/>
-																						</property>
-																					</object>
-																				</property>
-																			</object>
-																		</property>
-																	</object>
-																</property>
-																<property name="factory">
-																	<object class="GtkBuilderListItemFactory">
-																		<property name="resource">/fr/romainvigier/zap/ui/ZapListItem.ui</property>
-																	</object>
-																</property>
+															<object class="GtkBox" id="zapsBox">
+																<property name="orientation">vertical</property>
+																<property name="spacing">18</property>
 																<style>
-																	<class name="zaps"/>
+																	<class name="zaps-container"/>
 																</style>
 															</object>
 														</property>

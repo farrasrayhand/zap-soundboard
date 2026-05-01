@@ -23,6 +23,8 @@ export class AddZapPopup extends Gtk.Widget {
     #fileButton;
     /** @type {Gtk.Entry} */
     #nameEntry;
+    /** @type {Gtk.Entry} */
+    #groupEntry;
     /** @type {Gtk.Revealer} */
     #revealer;
 
@@ -31,7 +33,7 @@ export class AddZapPopup extends Gtk.Widget {
             GTypeName: 'ZapAddZapPopup',
             CssName: 'add-zap-popup',
             Template: 'resource:///fr/romainvigier/zap/ui/AddZapPopup.ui',
-            InternalChildren: ['colorChooser', 'fileButton', 'nameEntry', 'revealer'],
+            InternalChildren: ['colorChooser', 'fileButton', 'nameEntry', 'groupEntry', 'revealer'],
         }, this);
     }
 
@@ -44,6 +46,7 @@ export class AddZapPopup extends Gtk.Widget {
         this.#colorChooser = this._colorChooser;
         this.#fileButton = this._fileButton;
         this.#nameEntry = this._nameEntry;
+        this.#groupEntry = this._groupEntry;
         this.#revealer = this._revealer;
 
         this.#setupActions();
@@ -107,6 +110,7 @@ export class AddZapPopup extends Gtk.Widget {
     reset() {
         this.#fileButton.file = null;
         this.#nameEntry.text = '';
+        this.#groupEntry.text = '';
         this.#colorChooser.color = Color.NONE;
     }
 
@@ -173,6 +177,7 @@ export class AddZapPopup extends Gtk.Widget {
             collection: this.get_root().selectedCollection,
             uri: this.#fileButton.file.get_uri(),
             color: this.#colorChooser.color,
+            groupName: this.#groupEntry.text,
         });
     }
 

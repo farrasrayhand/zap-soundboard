@@ -67,3 +67,8 @@ zap:position a rdf:Property;
     rdfs:domain zap:Zap;
     rdfs:range xsd:integer;
     nrl:maxCardinality 1.
+
+zap:groupName a rdf:Property;
+    rdfs:domain zap:Zap;
+    rdfs:range xsd:string;
+    nrl:maxCardinality 1.

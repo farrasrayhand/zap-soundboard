@@ -107,7 +107,7 @@ export class Zaps extends Service {
     #restoreZaps() {
         console.debug('Restoring Zaps...');
         const cursor = globalThis.database.query(
-            `SELECT ?uuid ?name ?collectionUuid ?uri ?color ?loop ?volume ?position {
+            `SELECT ?uuid ?name ?collectionUuid ?uri ?color ?loop ?volume ?position ?groupName {
                 ?zap a zap:Zap;
                     zap:uuid ?uuid;
                     zap:name ?name;
@@ -117,6 +117,7 @@ export class Zaps extends Service {
                     zap:loop ?loop;
                     zap:volume ?volume;
                     zap:position ?position.
+                OPTIONAL { ?zap zap:groupName ?groupName }
             }`
         );
         while (cursor.next(this.#cancellable)) {
@@ -146,6 +147,9 @@ export class Zaps extends Service {
                         break;
                     case 'position':
                         data.position = cursor.get_integer(i);
+                        break;
+                    case 'groupName':
+                        [data.groupName] = cursor.get_string(i);
                         break;
                     default:
                 }
@@ -190,10 +194,11 @@ export class Zaps extends Service {
      * @param {Color} params.color Color of the Zap.
      * @param {boolean} params.loop If the Zap is looping.
      * @param {number} params.volume Volume of the Zap, between 0 and 1.
+     * @param {string} params.groupName Group name.
      * @returns {Zap} The newly added Zap.
      * @throws Throws an error if the file doesn't exist.
      */
-    add({ name, collection, uri, color = Color.GRAY, loop = false, volume = 1 }) {
+    add({ name, collection, uri, color = Color.GRAY, loop = false, volume = 1, groupName = '' }) {
         console.debug(`Adding new "${name}" Zap...`);
         const originalFile = Gio.File.new_for_uri(uri);
         if (!originalFile.query_exists(this.#cancellable))
@@ -213,6 +218,7 @@ export class Zaps extends Service {
             loop,
             volume,
             position: this.#getTotalInCollection(collection.uuid),
+            groupName,
         });
 
         const resource = Tracker.Resource.new(null);
@@ -225,6 +231,7 @@ export class Zaps extends Service {
         resource.set_boolean('zap:loop', zap.loop);
         resource.set_double('zap:volume', zap.volume);
         resource.set_int('zap:position', zap.position);
+        resource.set_string('zap:groupName', zap.groupName);
         globalThis.database.batch([resource]);
 
         this.#zaps.push(zap);
@@ -408,6 +415,21 @@ export class Zaps extends Service {
             this.#updateProperty(z, 'position', z.position + Math.sign(diff));
         });
         console.debug(`Moved Zap "${zap.name}" to position ${position}.`);
+    }
+
+    /**
+     * Change the group of a Zap.
+     *
+     * @param {object} params Parameter object.
+     * @param {Zap} params.zap Zap.
+     * @param {string} params.groupName New group name.
+     */
+    changeGroupName({ zap, groupName }) {
+        if (zap.groupName === groupName)
+            return;
+        console.debug(`Changing Zap "${zap.name}" group to "${groupName}"...`);
+        this.#updateProperty(zap, 'groupName', Tracker.sparql_escape_string(groupName));
+        console.debug(`Zap "${zap.name}" group changed to "${groupName}".`);
     }
 
     /**
