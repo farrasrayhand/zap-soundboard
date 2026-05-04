@@ -575,7 +575,7 @@ export class Window extends Adw.ApplicationWindow {
             await operation();
         } finally {
             GLib.source_remove(pulseId);
-            win.close();
+            win.destroy();
         }
     }
 
@@ -599,9 +599,11 @@ export class Window extends Adw.ApplicationWindow {
         dialog.set_current_name('zaps.zap');
         dialog.connect('response', async (d, response) => {
             if (response === Gtk.ResponseType.ACCEPT) {
+                const file = d.get_file();
+                d.destroy();
                 await this.#withProgress(_('Exporting Zaps…'), async () => {
                     try {
-                        const result = await globalThis.config.export(d.get_file());
+                        const result = await globalThis.config.export(file);
                         const info = new Adw.MessageDialog({
                             heading: _('Export Complete'),
                             body: _('%d collections, %d groups, %d zaps, %d sound files exported.')
@@ -614,8 +616,9 @@ export class Window extends Adw.ApplicationWindow {
                         this.#showError(_('Export failed'), e.message);
                     }
                 });
+            } else {
+                d.destroy();
             }
-            d.destroy();
         });
         dialog.show();
     }
@@ -638,55 +641,59 @@ export class Window extends Adw.ApplicationWindow {
         dialog.add_filter(filter);
 
         dialog.connect('response', async (d, response) => {
-            if (response === Gtk.ResponseType.ACCEPT) {
-                const file = d.get_file();
-                try {
-                    const metadata = await globalThis.config.getMetadata(file);
-                    
-                    // Check for name conflicts
-                    const existingNames = [];
-                    for (let i = 0; i < globalThis.collections.get_n_items(); i++) {
-                        existingNames.push(globalThis.collections.get_item(i).name);
-                    }
-
-                    const conflicts = metadata.collections.filter(c => existingNames.includes(c.name));
-
-                    if (conflicts.length > 0) {
-                        const confirm = new Adw.MessageDialog({
-                            heading: _('Conflicts Detected'),
-                            body: _('Some collections being imported already exist. Would you like to replace them or keep both?'),
-                            transient_for: this,
-                        });
-                        confirm.add_response('cancel', _('Cancel'));
-                        confirm.add_response('keep', _('Keep Both'));
-                        confirm.add_response('replace', _('Replace Existing'));
-                        confirm.set_response_appearance('replace', Adw.ResponseAppearance.DESTRUCTIVE);
-
-                        confirm.connect('response', async (c, res) => {
-                            if (res === 'replace') {
-                                await this.#withProgress(_('Importing Zaps…'), async () => {
-                                    const result = await globalThis.config.import(file, true);
-                                    this.#showImportResult(result);
-                                });
-                            } else if (res === 'keep') {
-                                await this.#withProgress(_('Importing Zaps…'), async () => {
-                                    const result = await globalThis.config.import(file, false);
-                                    this.#showImportResult(result);
-                                });
-                            }
-                        });
-                        confirm.present();
-                    } else {
-                        await this.#withProgress(_('Importing Zaps…'), async () => {
-                            const result = await globalThis.config.import(file);
-                            this.#showImportResult(result);
-                        });
-                    }
-                } catch (e) {
-                    this.#showError(_('Import failed'), e.message);
-                }
+            if (response !== Gtk.ResponseType.ACCEPT) {
+                d.destroy();
+                return;
             }
+
+            const file = d.get_file();
             d.destroy();
+
+            try {
+                const metadata = await globalThis.config.getMetadata(file);
+                
+                // Check for name conflicts
+                const existingNames = [];
+                for (let i = 0; i < globalThis.collections.get_n_items(); i++) {
+                    existingNames.push(globalThis.collections.get_item(i).name);
+                }
+
+                const conflicts = metadata.collections.filter(c => existingNames.includes(c.name));
+
+                if (conflicts.length > 0) {
+                    const confirm = new Adw.MessageDialog({
+                        heading: _('Conflicts Detected'),
+                        body: _('Some collections being imported already exist. Would you like to replace them or keep both?'),
+                        transient_for: this,
+                    });
+                    confirm.add_response('cancel', _('Cancel'));
+                    confirm.add_response('keep', _('Keep Both'));
+                    confirm.add_response('replace', _('Replace Existing'));
+                    confirm.set_response_appearance('replace', Adw.ResponseAppearance.DESTRUCTIVE);
+
+                    confirm.connect('response', async (c, res) => {
+                        if (res === 'replace') {
+                            await this.#withProgress(_('Importing Zaps…'), async () => {
+                                const result = await globalThis.config.import(file, true);
+                                this.#showImportResult(result);
+                            });
+                        } else if (res === 'keep') {
+                            await this.#withProgress(_('Importing Zaps…'), async () => {
+                                const result = await globalThis.config.import(file, false);
+                                this.#showImportResult(result);
+                            });
+                        }
+                    });
+                    confirm.present();
+                } else {
+                    await this.#withProgress(_('Importing Zaps…'), async () => {
+                        const result = await globalThis.config.import(file);
+                        this.#showImportResult(result);
+                    });
+                }
+            } catch (e) {
+                this.#showError(_('Import failed'), e.message);
+            }
         });
         dialog.show();
     }
