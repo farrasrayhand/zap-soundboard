@@ -23,8 +23,6 @@ export class AddZapPopup extends Gtk.Widget {
     #fileButton;
     /** @type {Gtk.Entry} */
     #nameEntry;
-    /** @type {Gtk.Entry} */
-    #groupEntry;
     /** @type {Gtk.Revealer} */
     #revealer;
     /** @type {Gtk.DropDown} */
@@ -35,7 +33,7 @@ export class AddZapPopup extends Gtk.Widget {
             GTypeName: 'ZapAddZapPopup',
             CssName: 'add-zap-popup',
             Template: 'resource:///fr/romainvigier/zap/ui/AddZapPopup.ui',
-            InternalChildren: ['colorChooser', 'fileButton', 'nameEntry', 'groupEntry', 'revealer', 'groupDropDown'],
+            InternalChildren: ['colorChooser', 'fileButton', 'nameEntry', 'revealer', 'groupDropDown'],
         }, this);
     }
 
@@ -48,7 +46,6 @@ export class AddZapPopup extends Gtk.Widget {
         this.#colorChooser = this._colorChooser;
         this.#fileButton = this._fileButton;
         this.#nameEntry = this._nameEntry;
-        this.#groupEntry = this._groupEntry;
         this.#revealer = this._revealer;
         this.#groupDropDown = this._groupDropDown;
 
@@ -63,8 +60,10 @@ export class AddZapPopup extends Gtk.Widget {
         const names = globalThis.zaps.getGroupNames(collectionUuid);
 
         const model = new Gtk.StringList();
+        model.append('No group');
         names.forEach(name => model.append(name));
         this.#groupDropDown.model = model;
+        this.#groupDropDown.selected = 0;
         this.#groupDropDown.sensitive = names.length > 0;
     }
 
@@ -74,9 +73,6 @@ export class AddZapPopup extends Gtk.Widget {
      * @param {Gtk.DropDown} dropdown The dropdown.
      */
     onGroupDropDownSelectedItemChanged(dropdown) {
-        const item = dropdown.selectedItem;
-        if (item)
-            this.#groupEntry.text = item.getString();
     }
 
     /**
@@ -138,8 +134,8 @@ export class AddZapPopup extends Gtk.Widget {
     reset() {
         this.#fileButton.file = null;
         this.#nameEntry.text = '';
-        this.#groupEntry.text = '';
         this.#colorChooser.color = Color.GRAY;
+        this.#groupDropDown.selected = 0;
     }
 
     /**
@@ -167,19 +163,6 @@ export class AddZapPopup extends Gtk.Widget {
      * @param {Gtk.Entry} entry Name entry.
      */
     onNameEntryActivated(entry) {
-        if (!this.#fileButton.file || !this.#nameEntry.text)
-            return;
-        this.#add();
-        this.close();
-        this.reset();
-    }
-
-    /**
-     * Callback when the group entry is activated.
-     *
-     * @param {Gtk.Entry} entry Group entry.
-     */
-    onGroupEntryActivated(entry) {
         if (!this.#fileButton.file || !this.#nameEntry.text)
             return;
         this.#add();
@@ -219,13 +202,23 @@ export class AddZapPopup extends Gtk.Widget {
             return;
         }
 
+        const groupName = this.#getSelectedGroupName();
+
         globalThis.zaps.add({
             name: this.#nameEntry.text,
             collection: root.selectedCollection,
             uri: this.#fileButton.file.get_uri(),
             color: this.#colorChooser.color,
-            groupName: this.#groupEntry.text,
+            groupName,
         });
+    }
+
+    #getSelectedGroupName() {
+        const item = this.#groupDropDown.selectedItem;
+        if (!item)
+            return '';
+        const name = item.string;
+        return name === 'No group' ? '' : name;
     }
 
     /**

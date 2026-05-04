@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';
 import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
@@ -20,8 +21,6 @@ export class EditZapPopover extends Gtk.Popover {
     /** @type {Gtk.Entry} */
     #nameEntry;
     /** @type {Gtk.Entry} */
-    #groupEntry;
-    /** @type {Gtk.Entry} */
     #hotkeyEntry;
     /** @type {Gtk.DropDown} */
     #groupDropDown;
@@ -34,7 +33,7 @@ export class EditZapPopover extends Gtk.Popover {
                 zap: GObject.ParamSpec.object('zap', 'Zap', 'Zap', GObject.ParamFlags.READWRITE, Zap),
                 collections: GObject.ParamSpec.object('collections', 'Collections', 'Collections', GObject.ParamFlags.READWRITE, Gio.ListModel),
             },
-            InternalChildren: ['nameEntry', 'groupEntry', 'hotkeyEntry', 'groupDropDown'],
+            InternalChildren: ['nameEntry', 'hotkeyEntry', 'groupDropDown'],
         }, this);
     }
 
@@ -52,7 +51,6 @@ export class EditZapPopover extends Gtk.Popover {
         this.collections = collections;
 
         this.#nameEntry = this._nameEntry;
-        this.#groupEntry = this._groupEntry;
         this.#hotkeyEntry = this._hotkeyEntry;
         this.#groupDropDown = this._groupDropDown;
 
@@ -67,12 +65,13 @@ export class EditZapPopover extends Gtk.Popover {
         const currentGroup = this.zap ? (this.zap.groupName || '') : '';
 
         const model = new Gtk.StringList();
-        let selectedPos = Gtk.INVALID_LIST_POSITION;
+        model.append('No group');
+        let selectedPos = 0;
 
         names.forEach((name, i) => {
             model.append(name);
             if (name === currentGroup)
-                selectedPos = i;
+                selectedPos = i + 1;
         });
 
         this.#groupDropDown.model = model;
@@ -90,14 +89,17 @@ export class EditZapPopover extends Gtk.Popover {
         if (!this.is_visible())
             return;
         const item = dropdown.selectedItem;
-        if (item) {
-            const name = item.getString();
-            this.#groupEntry.text = name;
-            globalThis.zaps.changeGroupName({
-                zap: this.zap,
-                groupName: name,
-            });
-        }
+        if (!item)
+            return;
+        const name = item.string;
+        const groupName = name === 'No group' ? '' : name;
+        if (groupName === this.zap.groupName)
+            return;
+        globalThis.zaps.changeGroupName({
+            zap: this.zap,
+            groupName,
+        });
+        this.popdown();
     }
 
     /**
@@ -128,7 +130,6 @@ export class EditZapPopover extends Gtk.Popover {
         if (!this.zap)
             return;
         this.#nameEntry.text = this.zap.name;
-        this.#groupEntry.text = this.zap.groupName || '';
         this.#hotkeyEntry.text = this.zap.hotkey || '';
         this.#refreshGroupDropdown();
     }
@@ -150,21 +151,6 @@ export class EditZapPopover extends Gtk.Popover {
             zap: this.zap,
             name: entry.text,
         });
-    }
-
-    /**
-     * Callback when the group entry is activated.
-     *
-     * @param {Gtk.Entry} entry Group entry.
-     */
-    onGroupEntryActivated(entry) {
-        if (!this.zap)
-            return;
-        globalThis.zaps.changeGroupName({
-            zap: this.zap,
-            groupName: entry.text,
-        });
-        this.popdown();
     }
 
     /**
@@ -198,9 +184,11 @@ export class EditZapPopover extends Gtk.Popover {
             });
         }
 
+        const item = this.#groupDropDown.selectedItem;
+        const groupName = item ? item.string : '';
         globalThis.zaps.changeGroupName({
             zap: this.zap,
-            groupName: this.#groupEntry.text,
+            groupName: groupName === 'No group' ? '' : groupName,
         });
 
         globalThis.zaps.changeHotkey({

@@ -27,26 +27,10 @@ SPDX-License-Identifier: GPL-3.0-or-later
 					</object>
 				</child>
 				<child>
-					<object class="GtkBox">
-						<property name="spacing">0</property>
-						<style>
-							<class name="linked"/>
-						</style>
-						<child>
-							<object class="GtkEntry" id="groupEntry">
-								<property name="hexpand">true</property>
-								<signal name="activate" handler="onGroupEntryActivated"/>
-								<property name="placeholder-text" translatable="yes">Group</property>
-								<property name="tooltip-text" translatable="yes">Group</property>
-							</object>
-						</child>
-						<child>
-							<object class="GtkDropDown" id="groupDropDown">
-								<signal name="notify::selected-item" handler="onGroupDropDownSelectedItemChanged"/>
-								<property name="enable-search">true</property>
-								<property name="tooltip-text" translatable="yes">Existing Groups</property>
-							</object>
-						</child>
+					<object class="GtkDropDown" id="groupDropDown">
+						<signal name="notify::selected-item" handler="onGroupDropDownSelectedItemChanged"/>
+						<property name="enable-search">true</property>
+						<property name="tooltip-text" translatable="yes">Group</property>
 					</object>
 				</child>
 				<child>

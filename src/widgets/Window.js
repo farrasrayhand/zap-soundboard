@@ -121,6 +121,7 @@ export class Window extends Adw.ApplicationWindow {
 
         this.#refreshZaps();
         this.#setupHotkeys();
+        this.#setupShortcuts();
 
         if (globalThis.devel)
             this.add_css_class('devel');
@@ -168,6 +169,18 @@ export class Window extends Adw.ApplicationWindow {
             }
             return false;
         });
+        this.add_controller(controller);
+    }
+
+    /**
+     * Setup keyboard shortcuts for global actions.
+     */
+    #setupShortcuts() {
+        const controller = new Gtk.ShortcutController();
+        controller.add_shortcut(new Gtk.Shortcut({
+            trigger: Gtk.ShortcutTrigger.parse_string('<Control><Shift>p'),
+            action: Gtk.NamedAction.new('win.prune'),
+        }));
         this.add_controller(controller);
     }
 
@@ -398,6 +411,13 @@ export class Window extends Adw.ApplicationWindow {
                     }
                 },
             },
+            {
+                name: 'prune',
+                parameterType: null,
+                callback: () => {
+                    this.#prune();
+                },
+            },
         ].forEach(({ name, parameterType, callback }) => {
             const action = new Gio.SimpleAction({ name, parameterType });
             action.connect('activate', callback);
@@ -487,6 +507,79 @@ export class Window extends Adw.ApplicationWindow {
     }
 
     /**
+     * Prune orphaned sound files.
+     */
+    async #prune() {
+        const dialog = new Adw.MessageDialog({
+            heading: _('Clean Up Unused Sounds'),
+            body: _('Remove sound files that are no longer referenced by any zap?'),
+            transient_for: this,
+        });
+        dialog.add_response('cancel', _('Cancel'));
+        dialog.add_response('prune', _('Clean Up'));
+        dialog.set_response_appearance('prune', Adw.ResponseAppearance.DESTRUCTIVE);
+
+        dialog.connect('response', async (d, response) => {
+            if (response === 'prune') {
+                try {
+                    const result = await globalThis.config.prune();
+                    const freedKiB = (result.freed / 1024).toFixed(1);
+                    const msg = result.removed > 0
+                        ? _('Removed %d file(s), %s KiB freed.').format(result.removed, freedKiB)
+                        : _('No orphaned files found.');
+                    const info = new Adw.MessageDialog({
+                        heading: _('Clean Up Complete'),
+                        body: msg,
+                        transient_for: this,
+                    });
+                    info.add_response('ok', _('OK'));
+                    info.present();
+                } catch (e) {
+                    console.error(`Prune failed: ${e.message}`);
+                }
+            }
+            d.destroy();
+        });
+        dialog.present();
+    }
+
+    /**
+     * Show a modal progress dialog while an async operation runs.
+     *
+     * @param {string} label Progress message.
+     * @param {() => Promise} operation Async operation.
+     */
+    async #withProgress(label, operation) {
+        const win = new Gtk.Window({
+            title: label,
+            modal: true,
+            transient_for: this,
+            resizable: false,
+            default_width: 320,
+            decorated: false,
+        });
+        const box = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 12, margin: 24 });
+        const lbl = new Gtk.Label({ label, wrap: true });
+        const bar = new Gtk.ProgressBar({ pulse_step: 0.1, hexpand: true });
+        box.append(lbl);
+        box.append(bar);
+        win.set_child(box);
+        win.present();
+
+        const pulseId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+            bar.pulse();
+            return GLib.SOURCE_CONTINUE;
+        });
+
+        try {
+            await operation();
+        } finally {
+            GLib.source_remove(pulseId);
+            win.close();
+        }
+    }
+
+    /**
      * Export Zaps.
      */
     #export() {
@@ -506,11 +599,21 @@ export class Window extends Adw.ApplicationWindow {
         dialog.set_current_name('zaps.zap');
         dialog.connect('response', async (d, response) => {
             if (response === Gtk.ResponseType.ACCEPT) {
-                try {
-                    await globalThis.config.export(d.get_file());
-                } catch (e) {
-                    this.#showError(_('Export failed'), e.message);
-                }
+                await this.#withProgress(_('Exporting Zaps…'), async () => {
+                    try {
+                        const result = await globalThis.config.export(d.get_file());
+                        const info = new Adw.MessageDialog({
+                            heading: _('Export Complete'),
+                            body: _('%d collections, %d groups, %d zaps, %d sound files exported.')
+                                .format(result.collections, result.groups, result.zaps, result.sounds),
+                            transient_for: this,
+                        });
+                        info.add_response('ok', _('OK'));
+                        info.present();
+                    } catch (e) {
+                        this.#showError(_('Export failed'), e.message);
+                    }
+                });
             }
             d.destroy();
         });
@@ -561,14 +664,23 @@ export class Window extends Adw.ApplicationWindow {
 
                         confirm.connect('response', async (c, res) => {
                             if (res === 'replace') {
-                                await globalThis.config.import(file, true);
+                                await this.#withProgress(_('Importing Zaps…'), async () => {
+                                    const result = await globalThis.config.import(file, true);
+                                    this.#showImportResult(result);
+                                });
                             } else if (res === 'keep') {
-                                await globalThis.config.import(file, false);
+                                await this.#withProgress(_('Importing Zaps…'), async () => {
+                                    const result = await globalThis.config.import(file, false);
+                                    this.#showImportResult(result);
+                                });
                             }
                         });
                         confirm.present();
                     } else {
-                        await globalThis.config.import(file);
+                        await this.#withProgress(_('Importing Zaps…'), async () => {
+                            const result = await globalThis.config.import(file);
+                            this.#showImportResult(result);
+                        });
                     }
                 } catch (e) {
                     this.#showError(_('Import failed'), e.message);
@@ -577,6 +689,35 @@ export class Window extends Adw.ApplicationWindow {
             d.destroy();
         });
         dialog.show();
+    }
+
+    /**
+     * Show import result summary.
+     *
+     * @param {object} result Import result.
+     */
+    #showImportResult(result) {
+        const parts = [];
+        if (result.collections > 0) parts.push(_('%d collections').format(result.collections));
+        if (result.groups > 0) parts.push(_('%d groups').format(result.groups));
+        if (result.zaps > 0) parts.push(_('%d zaps').format(result.zaps));
+        if (result.settings) parts.push(_('settings'));
+        const imported = parts.join(', ');
+
+        let msg = imported
+            ? _('Imported: ') + imported + '.'
+            : _('Nothing new to import.');
+
+        if (result.skipped > 0)
+            msg += '\n' + _('%d zaps skipped (already exist).').format(result.skipped);
+
+        const info = new Adw.MessageDialog({
+            heading: _('Import Complete'),
+            body: msg,
+            transient_for: this,
+        });
+        info.add_response('ok', _('OK'));
+        info.present();
     }
 
     /**

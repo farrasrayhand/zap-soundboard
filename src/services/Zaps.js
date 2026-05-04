@@ -420,8 +420,6 @@ export class Zaps extends Service {
         );
         
         zap.color = color;
-        const index = this.#zaps.indexOf(zap);
-        this.emit('items-changed', index, 1, 1);
         this.emit('zap-updated', zap.uuid, 'color');
     }
 
@@ -453,6 +451,11 @@ export class Zaps extends Service {
 
     changeGroupName({ zap, groupName }) {
         if (zap.groupName === groupName) return;
+
+        if (groupName && !this.#groups.find(g => g.name === groupName && g.collectionUuid === zap.collectionUuid)) {
+            this.addGroup({ name: groupName, collectionUuid: zap.collectionUuid });
+        }
+
         this.#updateProperty(zap, 'groupName', Tracker.sparql_escape_string(groupName));
     }
 
@@ -473,8 +476,6 @@ export class Zaps extends Service {
              }`
         );
         zap[property] = value;
-        const index = this.#zaps.indexOf(zap);
-        this.emit('items-changed', index, 1, 1);
         this.emit('zap-updated', zap.uuid, property);
     }
 

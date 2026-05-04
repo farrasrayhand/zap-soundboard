@@ -26,6 +26,7 @@ export class Config extends Service {
      */
     async export(file) {
         console.debug(`Exporting configuration to ${file.get_path()}...`);
+        const result = { collections: 0, groups: 0, zaps: 0, sounds: 0 };
         const tempDir = GLib.dir_make_tmp('zap-export-XXXXXX');
         const tempFile = Gio.File.new_for_path(tempDir);
         const soundsDir = tempFile.get_child('sounds');
@@ -57,6 +58,7 @@ export class Config extends Service {
                 uuid: col.uuid,
                 name: col.name,
             });
+            result.collections++;
         }
 
         // Export Persistent Groups
@@ -67,6 +69,7 @@ export class Config extends Service {
                 collectionUuid: group.collectionUuid,
                 position: group.position,
             });
+            result.groups++;
         });
 
         // Export Zaps
@@ -90,9 +93,11 @@ export class Config extends Service {
             const destSound = soundsDir.get_child(filename);
             try {
                 zap.file.copy(destSound, Gio.FileCopyFlags.OVERWRITE, null, null);
+                result.sounds++;
             } catch (e) {
                 console.warn(`Could not copy sound file ${filename}: ${e.message}`);
             }
+            result.zaps++;
         }
 
         const metadataFile = tempFile.get_child('metadata.json');
@@ -112,6 +117,7 @@ export class Config extends Service {
         } finally {
             this.#deleteRecursive(tempFile);
         }
+        return result;
     }
 
     /**
@@ -145,6 +151,7 @@ export class Config extends Service {
      */
     async import(file, replace = false) {
         console.debug(`Importing configuration from ${file.get_path()}... (replace: ${replace})`);
+        const result = { collections: 0, groups: 0, zaps: 0, settings: false, skipped: 0 };
         const tempDir = GLib.dir_make_tmp('zap-import-XXXXXX');
         const tempFile = Gio.File.new_for_path(tempDir);
 
@@ -164,6 +171,7 @@ export class Config extends Service {
                 throw new Error(`Unsupported export version: ${metadata.version}. Please update the app.`);
 
             // Import Application Settings
+            result.settings = !!metadata.settings;
             if (metadata.settings) {
                 if (metadata.settings.safetyMode !== undefined) {
                     globalThis.settings.set_boolean('safety-mode', metadata.settings.safetyMode);
@@ -227,6 +235,7 @@ export class Config extends Service {
                 }
                 colMap.set(colData.uuid, collection);
                 existingByName.set(collection.name, collection);
+                result.collections++;
             }
 
             // Import Groups if present (version 2+)
@@ -240,6 +249,7 @@ export class Config extends Service {
                             uuid: groupData.uuid,
                             position: groupData.position,
                         });
+                        result.groups++;
                     }
                 }
             }
@@ -255,6 +265,7 @@ export class Config extends Service {
                 }
 
                 if (existingZap) {
+                    result.skipped++;
                     const collection = colMap.get(zapData.collectionUuid);
                     if (existingZap.collectionUuid === collection?.uuid) {
                         console.debug(`Zap "${zapData.name}" already exists in the same collection, skipping.`);
@@ -280,6 +291,7 @@ export class Config extends Service {
                             uuid: zapData.uuid,
                             position: zapData.position,
                         });
+                        result.zaps++;
                     }
                 }
             }
@@ -287,6 +299,53 @@ export class Config extends Service {
         } finally {
             this.#deleteRecursive(tempFile);
         }
+        return result;
+    }
+
+    /**
+     * Remove orphaned sound files that are no longer referenced by any zap.
+     *
+     * @returns {Promise<{removed: number, freed: number}>} Result.
+     */
+    async prune() {
+        console.debug('Pruning orphaned sound files...');
+        const zapsDir = Gio.File.new_for_path(GLib.build_filenamev([GLib.get_user_data_dir(), pkg.name, 'zaps']));
+
+        // Collect all referenced sound file basenames
+        const referenced = new Set();
+        const nItems = globalThis.zaps.get_n_items();
+        for (let i = 0; i < nItems; i++) {
+            const zap = globalThis.zaps.get_item(i);
+            if (zap.file)
+                referenced.add(zap.file.get_basename());
+        }
+
+        // List files in zaps directory
+        let removed = 0;
+        let freed = 0;
+        if (!zapsDir.query_exists(null))
+            return { removed, freed };
+
+        const enumerator = zapsDir.enumerate_children('standard::name,standard::size', Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS, null);
+
+        let childInfo;
+        while ((childInfo = enumerator.next_file(null)) !== null) {
+            const name = childInfo.get_name();
+            if (!referenced.has(name)) {
+                const child = zapsDir.get_child(name);
+                freed += childInfo.get_size();
+                try {
+                    child.delete(null);
+                    removed++;
+                    console.debug(`Removed orphaned file: ${name}`);
+                } catch (e) {
+                    console.warn(`Failed to delete orphaned file ${name}: ${e.message}`);
+                }
+            }
+        }
+
+        console.debug(`Prune complete: ${removed} files removed, ${(freed / 1024).toFixed(1)} KiB freed.`);
+        return { removed, freed };
     }
 
     /**

@@ -14,12 +14,17 @@ This project is a fork of the original [Zap](https://gitlab.com/rmnvgr/zap) by R
 
 ## New Features & Improvements
 
-- **Persistent Grouping System**: Create, rename, and delete groups to organize your Zaps. Groups are saved permanently and support drag-and-drop organization.
-- **Preferences & Safety Mode**: New settings window with a "Safety Mode" to prevent accidental overlapping and a "Hide Stop Button" option for a cleaner, fade-only experience.
-- **Seamless Migration (Import/Export)**: Back up your entire setup (collections, groups, sounds, global hotkeys, and window settings) into a `.zap` archive. Everything is preserved, including layout positions and UUIDs, for a hassle-free transition between different PCs.
-- **Expanded Color Palette**: 18 beautiful colors optimized for Dark Mode and accessibility.
+- **Persistent Grouping System**: Organize Zaps into named groups. Reorder groups and rename them on the fly.
+- **Preferences & Safety Mode**: Settings window with a "Safety Mode" to prevent overlapping sounds, configurable fade-out duration, global hotkeys, and a "Hide Stop Button" option.
+- **Seamless Migration (Import/Export)**: Back up your entire setup (collections, groups, sounds, settings, global hotkeys, and window preferences) into a single `.zap` archive. Includes progress bar and summary dialog after import/export. Everything is preserved — including layout positions, UUIDs, and group assignments — for a hassle-free transition between PCs.
+- **Clean Up Unused Sounds**: Remove orphaned sound files left behind after deleting Zaps (Menu or `Ctrl+Shift+P`).
+- **Live Volume Sync**: Volume changes in the edit popover apply instantly to currently playing sounds.
+- **Simplified Group Selection**: Clean dropdown-only group picker in Add and Edit popups with a "No group" option to unassign.
+- **Expanded Color Palette**: 18 colors optimized for Dark Mode and accessibility.
+- **Playback Timestamps**: See current position and duration on each Zap.
+- **Drag-and-Drop Reordering**: Rearrange Zaps by drag-and-drop; groups can be reordered with move up/down buttons.
 - **Linux Installation Scripts**: Included `install-linux.sh` and `uninstall-linux.sh` for easy setup on Linux systems without Flatpak.
-- **Enhanced Stability**: Optimized UI refresh logic, fixed memory corruption issues, and improved performance.
+- **Enhanced Stability**: Optimized UI refresh logic, fixed memory corruption issues, and improved database query handling.
 
 ![](./resources/screenshots/1.png)
 

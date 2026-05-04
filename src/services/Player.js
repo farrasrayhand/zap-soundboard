@@ -199,6 +199,7 @@ export class Player extends Service {
 
         this.zap = zap;
         this.#connectToZap();
+        this.#syncVolume();
         this.zap.playing = true;
         this.zap.paused = false;
         this.#playbin.uri = zap.file.get_uri();
