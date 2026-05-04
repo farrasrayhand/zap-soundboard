@@ -73,11 +73,12 @@ fi
 # ---- Icons ----
 echo ""
 echo "[5/7] Removing icons..."
-ICON_DIRS=(
+ICON_FILES=(
     "$INSTALL_PREFIX/share/icons/hicolor/scalable/apps/$APP_ID.svg"
     "$INSTALL_PREFIX/share/icons/hicolor/symbolic/apps/$APP_ID-symbolic.svg"
+    "$INSTALL_PREFIX/share/pixmaps/$APP_ID.svg"
 )
-for ICON in "${ICON_DIRS[@]}"; do
+for ICON in "${ICON_FILES[@]}"; do
     if [ -f "$ICON" ]; then
         rm -f "$ICON"
         echo "  Removed: $ICON"
@@ -86,6 +87,7 @@ for ICON in "${ICON_DIRS[@]}"; do
     fi
 done
 gtk-update-icon-cache -f "$INSTALL_PREFIX/share/icons/hicolor" 2>/dev/null || true
+xdg-desktop-menu forceupdate 2>/dev/null || true
 
 # ---- D-Bus files ----
 echo ""
