@@ -20,6 +20,22 @@ import { ZapItem } from './ZapItem.js';
 
 
 /**
+ * Simple sprintf-style string formatting.
+ *
+ * @param {string} str Format string with %d, %s, etc.
+ * @param {...any} args Arguments.
+ * @returns {string} Formatted string.
+ */
+function formatString(str, ...args) {
+    let i = 0;
+    return str.replace(/%[dsf]/g, () => {
+        const val = args[i++];
+        return val !== undefined ? String(val) : '';
+    });
+}
+
+
+/**
  * Main application window.
  */
 export class Window extends Adw.ApplicationWindow {
@@ -525,7 +541,7 @@ export class Window extends Adw.ApplicationWindow {
                     const result = await globalThis.config.prune();
                     const freedKiB = (result.freed / 1024).toFixed(1);
                     const msg = result.removed > 0
-                        ? _('Removed %d file(s), %s KiB freed.').format(result.removed, freedKiB)
+                        ? formatString(_('Removed %d file(s), %s KiB freed.'), result.removed, freedKiB)
                         : _('No orphaned files found.');
                     const info = new Adw.MessageDialog({
                         heading: _('Clean Up Complete'),
@@ -558,7 +574,7 @@ export class Window extends Adw.ApplicationWindow {
             default_width: 320,
             decorated: false,
         });
-        const box = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 12, margin: 24 });
+        const box = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 12, margin_top: 24, margin_bottom: 24, margin_start: 24, margin_end: 24 });
         const lbl = new Gtk.Label({ label, wrap: true });
         const bar = new Gtk.ProgressBar({ pulse_step: 0.1, hexpand: true });
         box.append(lbl);
@@ -572,7 +588,7 @@ export class Window extends Adw.ApplicationWindow {
         });
 
         try {
-            await operation();
+            return await operation();
         } finally {
             GLib.source_remove(pulseId);
             win.destroy();
@@ -601,21 +617,21 @@ export class Window extends Adw.ApplicationWindow {
             if (response === Gtk.ResponseType.ACCEPT) {
                 const file = d.get_file();
                 d.destroy();
-                await this.#withProgress(_('Exporting Zaps…'), async () => {
-                    try {
-                        const result = await globalThis.config.export(file);
-                        const info = new Adw.MessageDialog({
-                            heading: _('Export Complete'),
-                            body: _('%d collections, %d groups, %d zaps, %d sound files exported.')
-                                .format(result.collections, result.groups, result.zaps, result.sounds),
-                            transient_for: this,
-                        });
-                        info.add_response('ok', _('OK'));
-                        info.present();
-                    } catch (e) {
-                        this.#showError(_('Export failed'), e.message);
-                    }
-                });
+                try {
+                    const result = await this.#withProgress(_('Exporting Zaps…'), () => {
+                        return globalThis.config.export(file);
+                    });
+                    const info = new Adw.MessageDialog({
+                        heading: _('Export Complete'),
+                        body: formatString(_('%d collections, %d groups, %d zaps, %d sound files exported.'),
+                            result.collections, result.groups, result.zaps, result.sounds),
+                        transient_for: this,
+                    });
+                    info.add_response('ok', _('OK'));
+                    info.present();
+                } catch (e) {
+                    this.#showError(_('Export failed'), e.message);
+                }
             } else {
                 d.destroy();
             }
@@ -651,7 +667,7 @@ export class Window extends Adw.ApplicationWindow {
 
             try {
                 const metadata = await globalThis.config.getMetadata(file);
-                
+
                 // Check for name conflicts
                 const existingNames = [];
                 for (let i = 0; i < globalThis.collections.get_n_items(); i++) {
@@ -673,23 +689,31 @@ export class Window extends Adw.ApplicationWindow {
 
                     confirm.connect('response', async (c, res) => {
                         if (res === 'replace') {
-                            await this.#withProgress(_('Importing Zaps…'), async () => {
-                                const result = await globalThis.config.import(file, true);
+                            try {
+                                const result = await this.#withProgress(_('Importing Zaps…'), () => {
+                                    return globalThis.config.import(file, true);
+                                });
                                 this.#showImportResult(result);
-                            });
+                            } catch (e) {
+                                this.#showError(_('Import failed'), e.message);
+                            }
                         } else if (res === 'keep') {
-                            await this.#withProgress(_('Importing Zaps…'), async () => {
-                                const result = await globalThis.config.import(file, false);
+                            try {
+                                const result = await this.#withProgress(_('Importing Zaps…'), () => {
+                                    return globalThis.config.import(file, false);
+                                });
                                 this.#showImportResult(result);
-                            });
+                            } catch (e) {
+                                this.#showError(_('Import failed'), e.message);
+                            }
                         }
                     });
                     confirm.present();
                 } else {
-                    await this.#withProgress(_('Importing Zaps…'), async () => {
-                        const result = await globalThis.config.import(file);
-                        this.#showImportResult(result);
+                    const result = await this.#withProgress(_('Importing Zaps…'), () => {
+                        return globalThis.config.import(file);
                     });
+                    this.#showImportResult(result);
                 }
             } catch (e) {
                 this.#showError(_('Import failed'), e.message);
@@ -705,9 +729,9 @@ export class Window extends Adw.ApplicationWindow {
      */
     #showImportResult(result) {
         const parts = [];
-        if (result.collections > 0) parts.push(_('%d collections').format(result.collections));
-        if (result.groups > 0) parts.push(_('%d groups').format(result.groups));
-        if (result.zaps > 0) parts.push(_('%d zaps').format(result.zaps));
+        if (result.collections > 0) parts.push(formatString(_('%d collections'), result.collections));
+        if (result.groups > 0) parts.push(formatString(_('%d groups'), result.groups));
+        if (result.zaps > 0) parts.push(formatString(_('%d zaps'), result.zaps));
         if (result.settings) parts.push(_('settings'));
         const imported = parts.join(', ');
 
@@ -716,7 +740,7 @@ export class Window extends Adw.ApplicationWindow {
             : _('Nothing new to import.');
 
         if (result.skipped > 0)
-            msg += '\n' + _('%d zaps skipped (already exist).').format(result.skipped);
+            msg += '\n' + formatString(_('%d zaps skipped (already exist).'), result.skipped);
 
         const info = new Adw.MessageDialog({
             heading: _('Import Complete'),
