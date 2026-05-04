@@ -34,7 +34,8 @@ install_apt() {
     sudo apt update
     sudo apt install -y gjs meson ninja-build \
         libgtk-4-dev libadwaita-1-dev \
-        libgstreamer1.0-dev gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
+        libgstreamer1.0-dev gstreamer1.0-plugins-base \
+        gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
         gstreamer1.0-plugins-ugly gstreamer1.0-libav \
         libtracker-sparql-3.0-dev gettext
 }
