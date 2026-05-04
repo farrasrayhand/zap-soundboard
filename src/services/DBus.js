@@ -439,7 +439,10 @@ export class DBus extends Service {
      * Exit the service.
      */
     exit() {
-        Gio.bus_unown_name(this.#ownerId);
+        if (this.#ownerId) {
+            Gio.bus_unown_name(this.#ownerId);
+            this.#ownerId = 0;
+        }
     }
 
     /**

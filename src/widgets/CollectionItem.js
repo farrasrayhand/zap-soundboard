@@ -170,8 +170,10 @@ export class CollectionItem extends Gtk.Widget {
      * Make the collection the selected collection.
      */
     #makeSelectedCollection() {
-        this.get_root().selectedCollection = this.collection;
+        const root = this.get_root();
         this.activate_action('menu.close', null);
+        if (root)
+            root.selectedCollection = this.collection;
     }
 
     /**

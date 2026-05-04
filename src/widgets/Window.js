@@ -78,6 +78,7 @@ export class Window extends Adw.ApplicationWindow {
         this.zaps = zaps || globalThis.zaps;
 
         this.#aboutWindow = this._aboutWindow;
+        this.#aboutWindow.version = (typeof pkg !== 'undefined') ? pkg.version : '1.2.3';
         this.#addZapPopup = this._addZapPopup;
         this.#addZapPopupOverlay = this._addZapPopupOverlay;
         this.#collectionsButton = this._collectionsButton;
@@ -86,12 +87,18 @@ export class Window extends Adw.ApplicationWindow {
 
         this.#setupCollections();
         this.#setupActions();
-        this.#restoreSettings();
 
         this.#addZapPopupOverlay.set_clip_overlay(this.#addZapPopup, false);
         this.#addZapPopupOverlay.set_measure_overlay(this.#addZapPopup, true);
 
-        this.connect('notify::selected-collection', () => this.#refreshZaps());
+        this.connect('notify::selected-collection', () => {
+            this.#refreshZaps();
+            if (this.selectedCollection)
+                globalThis.settings.set_string('last-selected-collection', this.selectedCollection.uuid);
+        });
+
+        this.#restoreSettings();
+
         this.#zapsConnections.push(
             globalThis.zaps.connect('items-changed', () => this.#refreshZaps()),
             globalThis.zaps.connect('groups-changed', () => this.#refreshZaps()),
@@ -101,22 +108,22 @@ export class Window extends Adw.ApplicationWindow {
             })
         );
 
+        this.connect('destroy', () => {
+            if (this.#refreshZapsId) {
+                GLib.source_remove(this.#refreshZapsId);
+                this.#refreshZapsId = 0;
+            }
+            this.#zapsConnections.forEach(id => globalThis.zaps.disconnect(id));
+            this.#zapsConnections = [];
+            this.#collectionsConnections.forEach(id => globalThis.collections.disconnect(id));
+            this.#collectionsConnections = [];
+        });
+
         this.#refreshZaps();
         this.#setupHotkeys();
 
         if (globalThis.devel)
             this.add_css_class('devel');
-    }
-
-    /**
-     * Dispose the window.
-     */
-    vfunc_dispose() {
-        this.#zapsConnections.forEach(id => globalThis.zaps.disconnect(id));
-        this.#zapsConnections = [];
-        this.#collectionsConnections.forEach(id => globalThis.collections.disconnect(id));
-        this.#collectionsConnections = [];
-        super.vfunc_dispose();
     }
 
     /**
@@ -167,49 +174,79 @@ export class Window extends Adw.ApplicationWindow {
     /**
      * Refresh the Zaps display.
      */
+    /** @type {number} */
+    #refreshZapsId = 0;
+
+    /**
+     * Refresh the Zaps layout.
+     */
     #refreshZaps() {
-        if (!this.#zapsBox || !this.selectedCollection || !this.#zapsStack) {
+        if (this.#refreshZapsId)
             return;
-        }
 
-        // Clear current content
-        let child = this.#zapsBox.get_first_child();
-        while (child) {
-            this.#zapsBox.remove(child);
-            child = this.#zapsBox.get_first_child();
-        }
+        this.#refreshZapsId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+            this.#doRefreshZaps();
+            this.#refreshZapsId = 0;
+            return GLib.SOURCE_REMOVE;
+        });
+    }
 
-        const filteredZaps = [];
-        const nItems = globalThis.zaps.get_n_items();
-        for (let i = 0; i < nItems; i++) {
-            const zap = globalThis.zaps.get_item(i);
-            if (zap && zap.collectionUuid === this.selectedCollection.uuid)
-                filteredZaps.push(zap);
-        }
+    /**
+     * Refresh the Zaps layout (internal).
+     */
+    #doRefreshZaps() {
+        if (!this.#zapsBox || !this.#zapsStack)
+            return;
 
-        const groups = globalThis.zaps.groups || [];
-        const filteredGroups = groups.filter(g => g && g.collectionUuid === this.selectedCollection.uuid);
-
-        if (filteredZaps.length === 0 && filteredGroups.length === 0) {
+        if (!this.selectedCollection) {
             this.#zapsStack.visible_child_name = 'no-zaps';
             return;
         }
 
-        this.#zapsStack.visible_child_name = 'zaps';
+        const collectionUuid = this.selectedCollection.uuid;
 
-        const displayedZapUuids = new Set();
-        
-        // Add Persistent Groups
-        filteredGroups.sort((a, b) => a.position - b.position).forEach(group => {
-            const groupZaps = filteredZaps.filter(z => z.groupName === group.name).sort((a, b) => a.position - b.position);
-            this.#addGroupToLayout(group.name, groupZaps, group);
-            groupZaps.forEach(z => displayedZapUuids.add(z.uuid));
-        });
+        try {
+            // Clear current content
+            let child = this.#zapsBox.get_first_child();
+            while (child) {
+                this.#zapsBox.remove(child);
+                child = this.#zapsBox.get_first_child();
+            }
 
-        // Add remaining Zaps (ungrouped or non-persistent groups)
-        const remainingZaps = filteredZaps.filter(z => !displayedZapUuids.has(z.uuid)).sort((a, b) => a.position - b.position);
-        if (remainingZaps.length > 0) {
-            this.#addGroupToLayout('', remainingZaps);
+            const filteredZaps = [];
+            const nItems = globalThis.zaps.get_n_items();
+            for (let i = 0; i < nItems; i++) {
+                const zap = globalThis.zaps.get_item(i);
+                if (zap && zap.collectionUuid === collectionUuid)
+                    filteredZaps.push(zap);
+            }
+
+            const groups = globalThis.zaps.groups || [];
+            const filteredGroups = groups.filter(g => g && g.collectionUuid === collectionUuid);
+
+            if (filteredZaps.length === 0 && filteredGroups.length === 0) {
+                this.#zapsStack.visible_child_name = 'no-zaps';
+                return;
+            }
+
+            this.#zapsStack.visible_child_name = 'zaps';
+
+            const displayedZapUuids = new Set();
+            
+            // Add Persistent Groups
+            filteredGroups.sort((a, b) => a.position - b.position).forEach(group => {
+                const groupZaps = filteredZaps.filter(z => z.groupName === group.name).sort((a, b) => a.position - b.position);
+                this.#addGroupToLayout(group.name, groupZaps, group);
+                groupZaps.forEach(z => displayedZapUuids.add(z.uuid));
+            });
+
+            // Add remaining Zaps (ungrouped or non-persistent groups)
+            const remainingZaps = filteredZaps.filter(z => !displayedZapUuids.has(z.uuid)).sort((a, b) => a.position - b.position);
+            if (remainingZaps.length > 0) {
+                this.#addGroupToLayout('', remainingZaps);
+            }
+        } catch (e) {
+            console.error(`Failed to refresh Zaps layout: ${e.message}`);
         }
     }
 
@@ -247,6 +284,9 @@ export class Window extends Adw.ApplicationWindow {
      * Add a new group.
      */
     #addGroup() {
+        if (!this.selectedCollection)
+            return;
+
         const dialog = new Adw.MessageDialog({
             heading: _('New Group'),
             body: _('Enter a name for the new group.'),
@@ -255,55 +295,8 @@ export class Window extends Adw.ApplicationWindow {
 
         const entry = new Gtk.Entry({
             placeholder_text: _('Group Name'),
-            secondary_icon_name: 'pan-down-symbolic',
-            secondary_icon_activatable: true,
-            secondary_icon_sensitive: true,
             margin_top: 12,
         });
-
-        const groupListBox = new Gtk.ListBox();
-        const groupPopover = new Gtk.Popover({ 
-            child: new Gtk.ScrolledWindow({ 
-                max_content_height: 200, 
-                propagate_natural_height: true, 
-                child: groupListBox 
-            }),
-            relative_to: entry
-        });
-
-        const refreshList = () => {
-            let child = groupListBox.get_first_child();
-            while (child) {
-                groupListBox.remove(child);
-                child = groupListBox.get_first_child();
-            }
-            const names = globalThis.zaps.getGroupNames(this.selectedCollection.uuid);
-            names.forEach(name => {
-                const label = new Gtk.Label({ label: name, xalign: 0, margin_start: 12, margin_end: 12, margin_top: 6, margin_bottom: 6 });
-                const row = new Gtk.ListBoxRow({ child: label });
-                row._groupName = name;
-                groupListBox.append(row);
-            });
-            if (names.length === 0) {
-                const label = new Gtk.Label({ label: _('No existing groups'), margin: 12 });
-                groupListBox.append(new Gtk.ListBoxRow({ child: label, sensitive: false }));
-            }
-        };
-
-        entry.connect('icon-release', (e, pos) => {
-            if (pos === Gtk.EntryIconPosition.SECONDARY) {
-                refreshList();
-                groupPopover.popup();
-            }
-        });
-
-        groupListBox.connect('row-activated', (list, row) => {
-            if (row._groupName !== undefined) {
-                entry.text = row._groupName;
-                groupPopover.popdown();
-            }
-        });
-
         dialog.set_extra_child(entry);
 
         dialog.add_response('cancel', _('Cancel'));
@@ -335,7 +328,7 @@ export class Window extends Adw.ApplicationWindow {
     #setupCollections() {
         this.#collectionsConnections.push(
             globalThis.collections.connect('collection-removed', (collections, uuid) => {
-                if (this.selectedCollection.uuid === uuid)
+                if (this.selectedCollection && this.selectedCollection.uuid === uuid)
                     this.selectedCollection = collections.get_item(0);
             }),
             globalThis.collections.connect('collection-added', (collections, uuid) => {
@@ -422,7 +415,7 @@ export class Window extends Adw.ApplicationWindow {
 
         try {
             const lastSelectedCollectionUuid = globalThis.settings.get_string('last-selected-collection');
-            this.selectedCollection = globalThis.collections.find({ uuid: lastSelectedCollectionUuid });
+            this.selectedCollection = globalThis.collections.find({ uuid: lastSelectedCollectionUuid }) || globalThis.collections.get_item(0);
         } catch (e) {
             this.selectedCollection = globalThis.collections.get_item(0);
         }
@@ -432,21 +425,23 @@ export class Window extends Adw.ApplicationWindow {
      * Save settings.
      */
     #saveSettings() {
-        globalThis.settings.set_uint('window-width', this.defaultWidth);
-        globalThis.settings.set_uint('window-height', this.defaultHeight);
-        globalThis.settings.set_boolean('window-maximized', this.maximized);
-        if (this.selectedCollection)
-            globalThis.settings.set_string('last-selected-collection', this.selectedCollection.uuid);
-    }
+        try {
+            const width = this.defaultWidth > 0 ? this.defaultWidth : 240;
+            const height = this.defaultHeight > 0 ? this.defaultHeight : 360;
+            globalThis.settings.set_uint('window-width', width);
+            globalThis.settings.set_uint('window-height', height);
+            globalThis.settings.set_boolean('window-maximized', this.maximized);
+        } catch (e) {
+            console.warn(`Failed to save window size settings: ${e.message}`);
+        }
 
-    /**
-     * Get the package version.
-     *
-     * @param {Window} window Window.
-     * @returns {string} Package version.
-     */
-    getPackageVersion(window) {
-        return (typeof pkg !== 'undefined') ? pkg.version : '1.2.3';
+        if (this.selectedCollection) {
+            try {
+                globalThis.settings.set_string('last-selected-collection', this.selectedCollection.uuid);
+            } catch (e) {
+                console.warn(`Failed to save last selected collection: ${e.message}`);
+            }
+        }
     }
 
     /**

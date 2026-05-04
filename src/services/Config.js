@@ -97,7 +97,7 @@ export class Config extends Service {
 
         const metadataFile = tempFile.get_child('metadata.json');
         metadataFile.replace_contents(
-            JSON.stringify(metadata, null, 2),
+            new TextEncoder().encode(JSON.stringify(metadata, null, 2)),
             null,
             false,
             Gio.FileCreateFlags.NONE,
@@ -159,6 +159,10 @@ export class Config extends Service {
             const [ok, contents] = metadataFile.load_contents(null);
             const metadata = JSON.parse(new TextDecoder().decode(contents));
 
+            const SUPPORTED_VERSIONS = [1, 2, 3, 4];
+            if (metadata.version && !SUPPORTED_VERSIONS.includes(metadata.version))
+                throw new Error(`Unsupported export version: ${metadata.version}. Please update the app.`);
+
             // Import Application Settings
             if (metadata.settings) {
                 if (metadata.settings.safetyMode !== undefined) {
@@ -205,7 +209,7 @@ export class Config extends Service {
                         if (existing.name === colData.name) {
                             // Clear existing content instead of removing the collection
                             // This prevents auto-recreation of default collection
-                            globalThis.zaps.removeAllOfCollection({ collection: existing });
+                            globalThis.zaps.removeAllOfCollection({ collection: existing, deleteFiles: false });
                             collection = existing;
                             break;
                         }
@@ -238,6 +242,24 @@ export class Config extends Service {
 
             const soundsDir = tempFile.get_child('sounds');
             for (const zapData of metadata.zaps) {
+                // Check if zap already exists locally to avoid unintended movements/duplicates
+                let existingZap = null;
+                try {
+                    existingZap = globalThis.zaps.find({ uuid: zapData.uuid });
+                } catch (e) {
+                    // Zap not found, this is fine
+                }
+
+                if (existingZap) {
+                    const collection = colMap.get(zapData.collectionUuid);
+                    if (existingZap.collectionUuid === collection?.uuid) {
+                        console.debug(`Zap "${zapData.name}" already exists in the same collection, skipping.`);
+                        continue;
+                    }
+                    console.debug(`Zap "${zapData.name}" (UUID: ${zapData.uuid}) already exists in another collection ("${existingZap.collectionUuid}"), skipping to avoid movement.`);
+                    continue;
+                }
+
                 const soundFile = soundsDir.get_child(zapData.filename);
                 if (soundFile.query_exists(null)) {
                     const collection = colMap.get(zapData.collectionUuid);

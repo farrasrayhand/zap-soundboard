@@ -103,6 +103,28 @@ export class ZapItem extends Gtk.Widget {
             globalThis.player.connect('play-started', () => this.#syncSafetyMode()),
             globalThis.player.connect('play-stopped', () => this.#syncSafetyMode())
         );
+
+        this.connect('destroy', () => {
+            this.#playerConnections.forEach(id => {
+                if (GLib.signal_handler_is_connected(globalThis.player, id))
+                    globalThis.player.disconnect(id);
+            });
+            this.#playerConnections = [];
+            this.#settingsConnections.forEach(id => {
+                if (GLib.signal_handler_is_connected(globalThis.settings, id))
+                    globalThis.settings.disconnect(id);
+            });
+            this.#settingsConnections = [];
+
+            if (this.#connectedZap) {
+                this.#zapConnections.forEach(id => {
+                    if (GLib.signal_handler_is_connected(this.#connectedZap, id))
+                        this.#connectedZap.disconnect(id);
+                });
+                this.#zapConnections = [];
+                this.#connectedZap = null;
+            }
+        });
     }
 
     /**
@@ -142,33 +164,6 @@ export class ZapItem extends Gtk.Widget {
         // Make fade out button take full height if stop is hidden
         this.#fadeOutButton.vexpand = hideStop;
         this.#fadeOutButton.valign = hideStop ? Gtk.Align.FILL : Gtk.Align.CENTER;
-    }
-
-    /**
-     * Dispose the widget.
-     */
-    vfunc_dispose() {
-        this.#playerConnections.forEach(id => {
-            if (GLib.signal_handler_is_connected(globalThis.player, id))
-                globalThis.player.disconnect(id);
-        });
-        this.#playerConnections = [];
-        this.#settingsConnections.forEach(id => {
-            if (GLib.signal_handler_is_connected(globalThis.settings, id))
-                globalThis.settings.disconnect(id);
-        });
-        this.#settingsConnections = [];
-
-        if (this.#connectedZap) {
-            this.#zapConnections.forEach(id => {
-                if (GLib.signal_handler_is_connected(this.#connectedZap, id))
-                    this.#connectedZap.disconnect(id);
-            });
-            this.#zapConnections = [];
-            this.#connectedZap = null;
-        }
-
-        super.vfunc_dispose();
     }
 
     /**

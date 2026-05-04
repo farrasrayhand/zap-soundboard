@@ -193,29 +193,50 @@ export class Application extends Adw.Application {
         });
     }
 
+    /** @type {number} */
+    #updateCssId = 0;
+
     /**
      * Update the CSS rules from the templates.
      */
     #updateCss() {
+        if (this.#updateCssId)
+            return;
+
+        this.#updateCssId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+            this.#doUpdateCss();
+            this.#updateCssId = 0;
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    /**
+     * Update the CSS rules from the templates (internal).
+     */
+    #doUpdateCss() {
         const rules = [];
 
         const { dark } = Adw.StyleManager.get_default();
 
         const colorTemplate = this.#cssTemplates.get('colorpill-color.template.css');
-        Color.forEach(color => {
-            const rule = colorTemplate
-                .replaceAll('$color_id', color.id)
-                .replaceAll('$color_value', dark ? color.rgba.dark.to_string() : color.rgba.light.to_string());
-            rules.push(rule);
-        });
+        if (colorTemplate) {
+            Color.forEach(color => {
+                const rule = colorTemplate
+                    .replaceAll('$color_id', color.id)
+                    .replaceAll('$color_value', dark ? color.rgba.dark.to_string() : color.rgba.light.to_string());
+                rules.push(rule);
+            });
+        }
 
         const zapItemTemplate = this.#cssTemplates.get(dark ? 'zap-item-color-dark.template.css' : 'zap-item-color.template.css');
-        for (let i = 0; i < globalThis.zaps.get_n_items(); i++) {
-            const zap = globalThis.zaps.get_item(i);
-            const rule = zapItemTemplate
-                .replaceAll('$uuid', zap.uuid)
-                .replaceAll('$zap_color', dark ? zap.color.rgba.dark.to_string() : zap.color.rgba.light.to_string());
-            rules.push(rule);
+        if (zapItemTemplate) {
+            for (let i = 0; i < globalThis.zaps.get_n_items(); i++) {
+                const zap = globalThis.zaps.get_item(i);
+                const rule = zapItemTemplate
+                    .replaceAll('$uuid', zap.uuid)
+                    .replaceAll('$zap_color', dark ? zap.color.rgba.dark.to_string() : zap.color.rgba.light.to_string());
+                rules.push(rule);
+            }
         }
 
         const provider = new Gtk.CssProvider();

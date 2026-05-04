@@ -283,10 +283,11 @@ export class EditZapPopover extends Gtk.Popover {
      * @param {Gtk.Button} button Remove button.
      */
     onRemoveButtonClicked(button) {
-        if (this.zap.playing)
-            globalThis.player.stop();
-        globalThis.zaps.remove({ zap: this.zap });
+        const zap = this.zap;
         this.popdown();
+        if (zap.playing)
+            globalThis.player.stop();
+        globalThis.zaps.remove({ zap });
     }
 
     /**

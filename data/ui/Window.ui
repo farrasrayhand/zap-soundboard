@@ -143,9 +143,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<object class="AdwAboutWindow" id="aboutWindow">
 		<property name="application-name" translatable="yes" comments="Translators: Application name, avoid translating it!">Zap</property>
 		<property name="application-icon">fr.romainvigier.zap</property>
-		<binding name="version">
-			<closure type="gchararray" function="getPackageVersion">ZapWindow</closure>
-		</binding>
 		<property name="developers">Romain Vigier https://www.romainvigier.fr/</property>
 		<property name="designers">Romain Vigier https://www.romainvigier.fr/</property>
 		<property name="artists">Romain Vigier https://www.romainvigier.fr/

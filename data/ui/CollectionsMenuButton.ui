@@ -66,7 +66,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 																<property name="sorter">
 																	<object class="GtkStringSorter">
 																		<property name="expression">
-																			<lookup name="name" type="Zap"/>
+																			<lookup name="name" type="ZapCollection"/>
 																		</property>
 																	</object>
 																</property>

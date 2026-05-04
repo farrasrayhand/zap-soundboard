@@ -72,9 +72,13 @@ export class Database extends Service {
      * @param {Tracker.Resource[]} resources Array of resources.
      */
     batch(resources = []) {
-        const batch = this.#connection.create_batch();
-        resources.forEach(resource => batch.add_resource(null, resource));
-        batch.execute(this.#cancellable);
+        try {
+            const batch = this.#connection.create_batch();
+            resources.forEach(resource => batch.add_resource(null, resource));
+            batch.execute(this.#cancellable);
+        } catch (e) {
+            console.error(`Database batch failed: ${e.message}`);
+        }
     }
 
     /**
@@ -84,7 +88,12 @@ export class Database extends Service {
      * @returns {Tracker.SparqlCursor} The result cursor.
      */
     query(sparql) {
-        return this.#connection.query_statement(sparql, this.#cancellable).execute(this.#cancellable);
+        try {
+            return this.#connection.query_statement(sparql, this.#cancellable).execute(this.#cancellable);
+        } catch (e) {
+            console.error(`Database query failed: ${e.message}\nQuery: ${sparql}`);
+            throw e;
+        }
     }
 
     /**
@@ -93,7 +102,11 @@ export class Database extends Service {
      * @param {string} sparql SPARQL update query.
      */
     update(sparql) {
-        this.#connection.update(sparql, this.#cancellable);
+        try {
+            this.#connection.update(sparql, this.#cancellable);
+        } catch (e) {
+            console.error(`Database update failed: ${e.message}\nQuery: ${sparql}`);
+        }
     }
 
 }

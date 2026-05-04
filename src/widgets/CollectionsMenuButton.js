@@ -121,10 +121,15 @@ export class CollectionsMenuButton extends Gtk.Widget {
      * Add a new collection.
      */
     #addCollection() {
-        const collection = globalThis.collections.add({ name: this.#addCollectionNameEntry.text });
-        this.get_root().selectedCollection = collection;
+        const name = this.#addCollectionNameEntry.text;
+        const collection = globalThis.collections.add({ name });
+        const root = this.get_root();
+
         this.popdown();
         this.#addCollectionNameEntry.text = '';
+
+        if (root)
+            root.selectedCollection = collection;
     }
 
 }

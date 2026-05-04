@@ -85,40 +85,46 @@ export class Zaps extends Service {
         
         // Groups
         const groupCursor = globalThis.database.query(
-            `SELECT ?uuid ?name ?collectionUuid ?position {
+            `PREFIX zap: <https://zap.romainvigier.fr#>
+             SELECT ?uuid ?name ?collectionUuid ?position {
                 ?group a zap:Group;
-                    zap:uuid ?uuid;
-                    zap:name ?name;
-                    zap:groupCollectionUuid ?collectionUuid;
-                    zap:groupPosition ?position.
+                    zap:uuid ?uuid.
+                OPTIONAL { ?group zap:name ?name }
+                OPTIONAL { ?group zap:groupCollectionUuid ?collectionUuid }
+                OPTIONAL { ?group zap:groupPosition ?position }
             }`
         );
         while (groupCursor.next(this.#cancellable)) {
             const data = {};
             for (let i = 0; i < groupCursor.nColumns; i++) {
                 const value = groupCursor.get_string(i);
+                const actualValue = Array.isArray(value) ? value[0] : value;
+
                 switch (groupCursor.get_variable_name(i)) {
-                    case 'uuid': data.uuid = value ? value[0] : ''; break;
-                    case 'name': data.name = value ? value[0] : ''; break;
-                    case 'collectionUuid': data.collectionUuid = value ? value[0] : ''; break;
+                    case 'uuid': data.uuid = actualValue || ''; break;
+                    case 'name': data.name = actualValue || ''; break;
+                    case 'collectionUuid': data.collectionUuid = actualValue || ''; break;
                     case 'position': data.position = groupCursor.get_integer(i); break;
                 }
             }
-            this.#groups.push(new Group(data));
+            if (data.uuid && !this.#groups.find(g => g.uuid === data.uuid)) {
+                this.#groups.push(new Group(data));
+            }
         }
 
         // Zaps
         const cursor = globalThis.database.query(
-            `SELECT ?uuid ?name ?collectionUuid ?uri ?color ?loop ?volume ?position ?groupName ?hotkey {
+            `PREFIX zap: <https://zap.romainvigier.fr#>
+             SELECT ?uuid ?name ?collectionUuid ?uri ?color ?loop ?volume ?position ?groupName ?hotkey {
                 ?zap a zap:Zap;
-                    zap:uuid ?uuid;
-                    zap:name ?name;
-                    zap:collectionUuid ?collectionUuid;
-                    zap:uri ?uri;
-                    zap:color ?color;
-                    zap:loop ?loop;
-                    zap:volume ?volume;
-                    zap:position ?position.
+                    zap:uuid ?uuid.
+                OPTIONAL { ?zap zap:name ?name }
+                OPTIONAL { ?zap zap:collectionUuid ?collectionUuid }
+                OPTIONAL { ?zap zap:uri ?uri }
+                OPTIONAL { ?zap zap:color ?color }
+                OPTIONAL { ?zap zap:loop ?loop }
+                OPTIONAL { ?zap zap:volume ?volume }
+                OPTIONAL { ?zap zap:position ?position }
                 OPTIONAL { ?zap zap:groupName ?groupName }
                 OPTIONAL { ?zap zap:hotkey ?hotkey }
             }`
@@ -127,20 +133,24 @@ export class Zaps extends Service {
             const data = {};
             for (let i = 0; i < cursor.nColumns; i++) {
                 const value = cursor.get_string(i);
+                const actualValue = Array.isArray(value) ? value[0] : value;
+
                 switch (cursor.get_variable_name(i)) {
-                    case 'uuid': data.uuid = value ? value[0] : ''; break;
-                    case 'name': data.name = value ? value[0] : ''; break;
-                    case 'collectionUuid': data.collectionUuid = value ? value[0] : ''; break;
-                    case 'uri': data.file = value ? Gio.File.new_for_uri(value[0]) : null; break;
-                    case 'color': data.color = value ? Color.fromId(value[0]) : Color.GRAY; break;
+                    case 'uuid': data.uuid = actualValue || ''; break;
+                    case 'name': data.name = actualValue || ''; break;
+                    case 'collectionUuid': data.collectionUuid = actualValue || ''; break;
+                    case 'uri': data.file = actualValue ? Gio.File.new_for_uri(actualValue) : null; break;
+                    case 'color': data.color = actualValue ? Color.fromId(actualValue) : Color.GRAY; break;
                     case 'loop': data.loop = cursor.get_boolean(i); break;
                     case 'volume': data.volume = cursor.get_double(i); break;
                     case 'position': data.position = cursor.get_integer(i); break;
-                    case 'groupName': data.groupName = value ? value[0] : ''; break;
-                    case 'hotkey': data.hotkey = value ? value[0] : ''; break;
+                    case 'groupName': data.groupName = actualValue || ''; break;
+                    case 'hotkey': data.hotkey = actualValue || ''; break;
                 }
             }
-            this.#zaps.push(new Zap(data));
+            if (data.uuid && !this.#zaps.find(z => z.uuid === data.uuid)) {
+                this.#zaps.push(new Zap(data));
+            }
         }
         this.emit('items-changed', 0, 0, this.#zaps.length);
         this.emit('groups-changed');
@@ -171,7 +181,7 @@ export class Zaps extends Service {
 
     addGroup({ name, collectionUuid, uuid = null, position = null }) {
         if (!collectionUuid) {
-            console.error('Cannot add group: collectionUuid is missing');
+            console.warn('Cannot add group: collectionUuid is missing');
             return null;
         }
 
@@ -183,15 +193,19 @@ export class Zaps extends Service {
             console.debug(`Group with UUID "${groupUuid}" already exists, updating.`);
             this.renameGroup({ group: existing, name });
             if (position !== null) this.#updateGroupProperty(existing, 'position', position);
+            if (existing.collectionUuid !== collectionUuid) {
+                this.#updateGroupProperty(existing, 'groupCollectionUuid', collectionUuid);
+                existing.collectionUuid = collectionUuid;
+            }
             return existing;
         }
 
-        console.debug(`Adding new group "${name}"...`);
+        console.debug(`Adding new group "${name}" in collection "${collectionUuid}"...`);
         const groupPosition = position !== null ? position : this.#groups.filter(g => g.collectionUuid === collectionUuid).length;
         
         const group = new Group({ uuid: groupUuid, name, collectionUuid, position: groupPosition });
         
-        const resource = Tracker.Resource.new(null);
+        const resource = Tracker.Resource.new(`zap:group:${groupUuid}`);
         resource.set_uri('rdf:type', 'zap:Group');
         resource.set_string('zap:uuid', groupUuid);
         resource.set_string('zap:name', name);
@@ -205,19 +219,22 @@ export class Zaps extends Service {
     }
 
     removeGroup({ group }) {
+        console.debug(`Removing group "${group.name}"...`);
         globalThis.database.update(
-            `DELETE { ?g a rdfs:Resource } WHERE { ?g a zap:Group; zap:uuid "${group.uuid}" }`
+            `PREFIX zap: <https://zap.romainvigier.fr#>
+             DELETE WHERE { ?g a zap:Group; zap:uuid "${Tracker.sparql_escape_string(group.uuid)}"; ?p ?o }`
         );
         // Also clear groupName for all zaps in this group
         this.#zaps.filter(z => z.groupName === group.name && z.collectionUuid === group.collectionUuid).forEach(z => {
             this.changeGroupName({ zap: z, groupName: '' });
         });
-        
-        const index = this.#groups.indexOf(group);
-        this.#groups.splice(index, 1);
-        this.emit('groups-changed');
-    }
 
+        const index = this.#groups.findIndex(element => element.uuid === group.uuid);
+        if (index !== -1) {
+            this.#groups.splice(index, 1);
+            this.emit('groups-changed');
+        }
+    }
     renameGroup({ group, name }) {
         if (group.name === name) return;
         const oldName = group.name;
@@ -253,8 +270,8 @@ export class Zaps extends Service {
                 this.#updateGroupProperty(group, 'position', newPosition);
                 return;
             }
-            if (diff < 0 && (g.position <= oldPosition || g.position > newPosition)) return;
-            if (diff > 0 && (g.position < newPosition || g.position >= oldPosition)) return;
+            if (diff < 0 && (g.position < oldPosition || g.position > newPosition)) return;
+            if (diff > 0 && (g.position < newPosition || g.position > oldPosition)) return;
             this.#updateGroupProperty(g, 'position', g.position + Math.sign(diff));
         });
         
@@ -265,8 +282,13 @@ export class Zaps extends Service {
         const valStr = typeof value === 'string' ? `"${value}"` : value;
         const sparqlProperty = property === 'position' ? 'groupPosition' : property;
         globalThis.database.update(
-            `DELETE { ?group zap:${sparqlProperty} ?v } INSERT { ?group zap:${sparqlProperty} ${valStr} } 
-             WHERE { ?group a zap:Group; zap:uuid "${group.uuid}"; zap:${sparqlProperty} ?v }`
+            `PREFIX zap: <https://zap.romainvigier.fr#>
+             DELETE { ?group zap:${sparqlProperty} ?v } INSERT { ?group zap:${sparqlProperty} ${valStr} } 
+             WHERE { 
+                ?group a zap:Group; 
+                    zap:uuid "${group.uuid}".
+                OPTIONAL { ?group zap:${sparqlProperty} ?v }
+             }`
         );
         group[property] = value;
     }
@@ -321,7 +343,7 @@ export class Zaps extends Service {
             hotkey,
         });
 
-        const resource = Tracker.Resource.new(null);
+        const resource = Tracker.Resource.new(`zap:zap:${zapUuid}`);
         resource.set_uri('rdf:type', 'zap:Zap');
         resource.set_string('zap:uuid', zap.uuid);
         resource.set_string('zap:name', zap.name);
@@ -338,20 +360,37 @@ export class Zaps extends Service {
         this.#zaps.push(zap);
         this.emit('items-changed', this.#zaps.length - 1, 0, 1);
         this.emit('zap-added', zap.uuid);
+
         return zap;
     }
 
-    remove({ zap }) {
-        globalThis.database.update(`DELETE { ?z a rdfs:Resource } WHERE { ?z a zap:Zap; zap:uuid "${zap.uuid}" }`);
-        zap.file.delete(this.#cancellable);
-        const index = this.#zaps.indexOf(zap);
-        this.#zaps.splice(index, 1);
-        this.emit('items-changed', index, 1, 0);
+    remove({ zap, deleteFile = true }) {
+        console.debug(`Removing zap "${zap.name}"...`);
+
+        // Delete from database
+        globalThis.database.update(
+            `PREFIX zap: <https://zap.romainvigier.fr#>
+             DELETE WHERE { ?z a zap:Zap; zap:uuid "${Tracker.sparql_escape_string(zap.uuid)}"; ?p ?o }`
+        );
+
+        if (deleteFile) {
+            try {
+                zap.file.delete(this.#cancellable);
+            } catch (e) {
+                console.warn(`Could not delete sound file: ${e.message}`);
+            }
+        }
+
+        const index = this.#zaps.findIndex(element => element.uuid === zap.uuid);
+        if (index !== -1) {
+            this.#zaps.splice(index, 1);
+            this.emit('items-changed', index, 1, 0);
+        }
         this.emit('zap-removed', zap.uuid);
     }
 
-    removeAllOfCollection({ collection }) {
-        this.#zaps.filter(z => z.collectionUuid === collection.uuid).forEach(z => this.remove({ zap: z }));
+    removeAllOfCollection({ collection, deleteFiles = true }) {
+        this.#zaps.filter(z => z.collectionUuid === collection.uuid).forEach(z => this.remove({ zap: z, deleteFile: deleteFiles }));
         this.#groups.filter(g => g.collectionUuid === collection.uuid).forEach(g => this.removeGroup({ group: g }));
     }
 
@@ -372,7 +411,8 @@ export class Zaps extends Service {
         if (zap.color === color) return;
         
         globalThis.database.update(
-            `DELETE { ?zap zap:color ?v } INSERT { ?zap zap:color "${color.id}" } 
+            `PREFIX zap: <https://zap.romainvigier.fr#>
+             DELETE { ?zap zap:color ?v } INSERT { ?zap zap:color "${color.id}" } 
              WHERE { ?zap a zap:Zap; zap:uuid "${zap.uuid}"; zap:color ?v }`
         );
         
@@ -421,8 +461,13 @@ export class Zaps extends Service {
     #updateProperty(zap, property, value) {
         const valStr = typeof value === 'string' ? `"${value}"` : value;
         globalThis.database.update(
-            `DELETE { ?zap zap:${property} ?v } INSERT { ?zap zap:${property} ${valStr} } 
-             WHERE { ?zap a zap:Zap; zap:uuid "${zap.uuid}"; zap:${property} ?v }`
+            `PREFIX zap: <https://zap.romainvigier.fr#>
+             DELETE { ?zap zap:${property} ?v } INSERT { ?zap zap:${property} ${valStr} } 
+             WHERE { 
+                ?zap a zap:Zap; 
+                    zap:uuid "${zap.uuid}".
+                OPTIONAL { ?zap zap:${property} ?v }
+             }`
         );
         zap[property] = value;
         const index = this.#zaps.indexOf(zap);

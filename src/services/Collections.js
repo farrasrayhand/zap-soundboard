@@ -93,27 +93,32 @@ export class Collections extends Service {
     #restoreCollections() {
         console.debug('Restoring collections...');
         const cursor = globalThis.database.query(
-            `SELECT ?uuid ?name {
+            `PREFIX zap: <https://zap.romainvigier.fr#>
+             SELECT ?uuid ?name {
                 ?collection a zap:Collection;
-                    zap:uuid ?uuid;
-                    zap:name ?name.
+                    zap:uuid ?uuid.
+                OPTIONAL { ?collection zap:name ?name }
             }`
         );
         while (cursor.next(this.#cancellable)) {
             const data = {};
             for (let i = 0; i < cursor.nColumns; i++) {
                 const value = cursor.get_string(i);
+                const actualValue = Array.isArray(value) ? value[0] : value;
+
                 switch (cursor.get_variable_name(i)) {
                     case 'uuid':
-                        data.uuid = value ? value[0] : '';
+                        data.uuid = actualValue || '';
                         break;
                     case 'name':
-                        data.name = value ? value[0] : '';
+                        data.name = actualValue || '';
                         break;
                     default:
                 }
             }
-            this.#collections.push(new Collection(data));
+            if (data.uuid && !this.#collections.find(c => c.uuid === data.uuid)) {
+                this.#collections.push(new Collection(data));
+            }
         }
         this.emit('items-changed', 0, 0, this.#collections.length);
         console.debug(`${this.#collections.length} collections restored.`);
@@ -137,6 +142,7 @@ export class Collections extends Service {
      * @throws Throws an error if no collection has the given UUID.
      */
     find({ uuid }) {
+        if (!uuid) return null;
         const collection = this.#collections.find(element => element.uuid === uuid);
         if (collection === undefined)
             throw new Error(`No collection with UUID "${uuid}" found.`);
@@ -168,7 +174,7 @@ export class Collections extends Service {
             name,
         });
 
-        const resource = Tracker.Resource.new(null);
+        const resource = Tracker.Resource.new(`zap:collection:${collection.uuid}`);
         resource.set_uri('rdf:type', 'zap:Collection');
         resource.set_string('zap:uuid', collection.uuid);
         resource.set_string('zap:name', collection.name);
@@ -225,24 +231,26 @@ export class Collections extends Service {
      * @param {Collection} params.collection Collection.
      */
     remove({ collection }) {
+        if (!collection) return;
         console.debug(`Removing collection "${collection.name}"...`);
 
         globalThis.zaps.removeAllOfCollection({ collection });
 
         globalThis.database.update(
-            `DELETE {
-                ?collection a rdfs:Resource
-            } WHERE {
-                ?collection a zap:Collection;
-                    zap:uuid ?uuid.
-                FILTER (?uuid = "${Tracker.sparql_escape_string(collection.uuid)}")
-            }`
+            `PREFIX zap: <https://zap.romainvigier.fr#>
+             DELETE WHERE { 
+                ?collection a zap:Collection; 
+                    zap:uuid "${Tracker.sparql_escape_string(collection.uuid)}";
+                    ?p ?o.
+             }`
         );
 
-        const index = this.#collections.findIndex(element => element === collection);
-        this.#collections.splice(index, 1);
+        const index = this.#collections.findIndex(element => element.uuid === collection.uuid);
+        if (index !== -1) {
+            this.#collections.splice(index, 1);
+            this.emit('items-changed', index, 1, 0);
+        }
 
-        this.emit('items-changed', index, 1, 0);
         this.emit('collection-removed', collection.uuid);
 
         console.debug(`Collection "${collection.name}" removed.`);
@@ -265,22 +273,22 @@ export class Collections extends Service {
             return;
 
         globalThis.database.update(
-            `DELETE {
-                ?collection zap:name ?name
-            } INSERT {
-                ?collection zap:name "${Tracker.sparql_escape_string(name)}"
-            } WHERE {
-                ?collection a zap:Collection;
-                    zap:uuid ?uuid;
-                    zap:name ?name.
-                FILTER (?uuid = "${Tracker.sparql_escape_string(collection.uuid)}")
-            }`
+            `PREFIX zap: <https://zap.romainvigier.fr#>
+             DELETE { ?collection zap:name ?v } 
+             INSERT { ?collection zap:name "${Tracker.sparql_escape_string(name)}" } 
+             WHERE { 
+                ?collection a zap:Collection; 
+                    zap:uuid "${Tracker.sparql_escape_string(collection.uuid)}".
+                OPTIONAL { ?collection zap:name ?v }
+             }`
         );
 
         collection.name = name;
 
         const index = this.#collections.findIndex(element => element === collection);
-        this.#collections.emit('items-changed', index, 1, 1);
+        if (index !== -1)
+            this.emit('items-changed', index, 1, 1);
+
         this.emit('collection-updated', collection.uuid);
 
         console.debug(`Collection "${oldName}" renamed to "${name}".`);
