@@ -18,38 +18,55 @@ INSTALL_PREFIX="${HOME}/.local"
 echo "=== Zap Soundboard - Linux Installer (Fixed) ==="
 echo ""
 
-# ---- Check dependencies ----
-echo "[1/5] Checking dependencies..."
+# ---- Detect OS and Install Dependencies ----
+echo "[1/5] Checking system and dependencies..."
 
-check_dep() {
-    if ! command -v "$1" &>/dev/null && ! pkg-config --exists "$2" 2>/dev/null; then
-        echo "  MISSING: $3"
-        MISSING=1
-    else
-        echo "  OK: $3"
-    fi
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS=$ID
+    LIKE=$ID_LIKE
+else
+    OS=$(uname -s)
+fi
+
+install_apt() {
+    echo "  Detected Debian/Ubuntu-based system."
+    sudo apt update
+    sudo apt install -y gjs meson ninja-build \
+        libgtk-4-dev libadwaita-1-dev \
+        libgstreamer1.0-dev gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
+        gstreamer1.0-plugins-ugly gstreamer1.0-libav \
+        libtracker-sparql-3.0-dev gettext
 }
 
-MISSING=0
-command -v gjs &>/dev/null && echo "  OK: gjs (GJS)" || { echo "  MISSING: gjs (GJS)"; MISSING=1; }
-command -v meson &>/dev/null && echo "  OK: meson" || { echo "  MISSING: meson"; MISSING=1; }
-command -v ninja &>/dev/null && echo "  OK: ninja" || { echo "  MISSING: ninja-build"; MISSING=1; }
-pkg-config --exists gtk4 2>/dev/null && echo "  OK: GTK4 (libgtk-4-dev)" || { echo "  MISSING: libgtk-4-dev"; MISSING=1; }
-pkg-config --exists libadwaita-1 2>/dev/null && echo "  OK: libadwaita-1 (libadwaita-1-dev)" || { echo "  MISSING: libadwaita-1-dev"; MISSING=1; }
-pkg-config --exists gstreamer-1.0 2>/dev/null && echo "  OK: GStreamer (libgstreamer1.0-dev)" || { echo "  MISSING: libgstreamer1.0-dev + gstreamer1.0-plugins-good"; MISSING=1; }
-pkg-config --exists tracker-sparql-3.0 2>/dev/null && echo "  OK: Tracker3 (libtracker-sparql-3.0-dev)" || { echo "  MISSING: libtracker-sparql-3.0-dev"; MISSING=1; }
+install_pacman() {
+    echo "  Detected Arch/CachyOS-based system."
+    sudo pacman -S --needed --noconfirm \
+        gjs gtk4 libadwaita gstreamer gst-plugins-base \
+        gst-plugins-good gst-plugins-bad gst-plugins-ugly \
+        gst-libav tinysparql localsearch meson ninja gettext
+}
 
-if [ "$MISSING" = "1" ]; then
-    echo ""
-    echo "Install missing dependencies with:"
-    echo "  sudo apt install gjs meson ninja-build \\"
-    echo "    libgtk-4-dev libadwaita-1-dev \\"
-    echo "    libgstreamer1.0-dev gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \\"
-    echo "    libtracker-sparql-3.0-dev gettext"
-    echo ""
-    read -p "Continue anyway? [y/N] " yn
-    [[ "$yn" == "y" || "$yn" == "Y" ]] || exit 1
-fi
+case "$OS" in
+    ubuntu|debian|pop|mint|kali)
+        install_apt
+        ;;
+    arch|cachyos|manjaro|endeavouros)
+        install_pacman
+        ;;
+    *)
+        if [[ "$LIKE" == *"arch"* ]]; then
+            install_pacman
+        elif [[ "$LIKE" == *"debian"* ]] || [[ "$LIKE" == *"ubuntu"* ]]; then
+            install_apt
+        else
+            echo "  WARNING: Unsupported distribution ($OS). Please install dependencies manually."
+            echo "  Requirements: GJS, GTK4, Libadwaita, GStreamer (base, good, bad, ugly, libav), Tracker3/Tinysparql."
+            read -p "  Continue anyway? [y/N] " yn
+            [[ "$yn" == "y" || "$yn" == "Y" ]] || exit 1
+        fi
+        ;;
+esac
 
 # ---- Build ----
 echo ""
