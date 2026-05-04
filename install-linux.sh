@@ -102,7 +102,7 @@ fi
 
 # ---- Register D-Bus service ----
 echo ""
-echo "[5/6] Setting up D-Bus service..."
+echo "[5/5] Setting up D-Bus service..."
 DBUS_SERVICE_DIR="$HOME/.local/share/dbus-1/services"
 DBUS_SERVICE_FILE="$DBUS_SERVICE_DIR/fr.romainvigier.zap.service"
 
@@ -116,41 +116,9 @@ Exec=$INSTALL_PREFIX/bin/fr.romainvigier.zap --gapplication-service
 EOF
 echo "  D-Bus service registered at: $DBUS_SERVICE_FILE"
 
-# ---- Update desktop/icon databases ----
-echo ""
-echo "[6/6] Updating desktop and icon databases..."
-
-# Fix for blank icons: Ensure hicolor directory has an index.theme if it's a local install
-ICON_THEME_DIR="$INSTALL_PREFIX/share/icons/hicolor"
-if [ ! -f "$ICON_THEME_DIR/index.theme" ]; then
-    echo "  Creating local icon theme index..."
-    mkdir -p "$ICON_THEME_DIR"
-    cat > "$ICON_THEME_DIR/index.theme" << EOF
-[Icon Theme]
-Name=Hicolor
-Comment=Fallback icon theme
-Hidden=true
-Directories=scalable/apps,symbolic/apps
-
-[scalable/apps]
-Size=48
-Type=Scalable
-Context=Applications
-
-[symbolic/apps]
-Size=48
-Type=Scalable
-Context=Applications
-EOF
-fi
-
-# Fallback: Copy icon to pixmaps for better compatibility with some desktop environments
-mkdir -p "$INSTALL_PREFIX/share/pixmaps"
-cp "$ICON_THEME_DIR/scalable/apps/fr.romainvigier.zap.svg" "$INSTALL_PREFIX/share/pixmaps/" 2>/dev/null || true
-
+# ---- Update desktop DB ----
 update-desktop-database "$INSTALL_PREFIX/share/applications" 2>/dev/null || true
-gtk-update-icon-cache -f -t "$ICON_THEME_DIR" 2>/dev/null || true
-xdg-desktop-menu forceupdate 2>/dev/null || true
+gtk-update-icon-cache -f "$INSTALL_PREFIX/share/icons/hicolor" 2>/dev/null || true
 
 echo ""
 echo "=== Installation complete! ==="
@@ -158,6 +126,4 @@ echo ""
 echo "Run Zap with:"
 echo "  $INSTALL_PREFIX/bin/fr.romainvigier.zap"
 echo ""
-echo "Note: If the icon still doesn't appear, you may need to log out and log back in,"
-echo "or ensure that '$INSTALL_PREFIX/share' is in your XDG_DATA_DIRS."
-echo ""
+echo "Or find it in your app launcher as 'Zap'"

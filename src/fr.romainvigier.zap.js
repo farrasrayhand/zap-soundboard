@@ -50,24 +50,18 @@ try {
         }
     });
 
-    // Register Icons Path
-    GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-        const display = Gdk.Display.get_default();
-        if (display) {
-            const iconTheme = Gtk.IconTheme.get_for_display(display);
-            
-            // 1. Add resource path for internal icons (Play, Stop, etc.)
-            // This works for both installed and development versions
-            iconTheme.add_resource_path('/fr/romainvigier/zap/icons');
-
-            // 2. Add local search path (only if running from build directory)
-            const localIcons = sourceRoot.get_child('data').get_child('icons');
-            if (localIcons.query_exists(null)) {
+    // Register Icons Path (Must be done after display is available, but Gtk.init usually handles this)
+    const localIcons = sourceRoot.get_child('data').get_child('icons');
+    if (localIcons.query_exists(null)) {
+        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            const display = Gdk.Display.get_default();
+            if (display) {
+                const iconTheme = Gtk.IconTheme.get_for_display(display);
                 iconTheme.add_search_path(localIcons.get_path());
             }
-        }
-        return GLib.SOURCE_REMOVE;
-    });
+            return GLib.SOURCE_REMOVE;
+        });
+    }
 
 } catch (e) {
 }
