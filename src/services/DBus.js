@@ -315,7 +315,7 @@ class ZapService {
             if (name)
                 globalThis.zaps.rename({ zap, name: name.unpack() });
             if (collectionUuid)
-                globalThis.zaps.changeCollection({ zap, collection: globalThis.collections.find({ uuid: collectionUuid.unpack() }) });
+                globalThis.zaps.changeCollection({ zap, collectionUuid: collectionUuid.unpack() });
             if (color)
                 globalThis.zaps.changeColor({ zap, color: Color.fromId(color.unpack()) });
             if (loop)

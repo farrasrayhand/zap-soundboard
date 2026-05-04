@@ -246,9 +246,15 @@ export class EditZapPopover extends Gtk.Popover {
     onCollectionDropDownSelectedItemChanged(dropdown) {
         if (!this.zap)
             return;
+        // Only process user-initiated changes when the popover is actually visible
+        if (!this.is_visible())
+            return;
+        const collection = dropdown.selectedItem;
+        if (!collection || collection.uuid === this.zap.collectionUuid)
+            return;
         globalThis.zaps.changeCollection({
             zap: this.zap,
-            collectionUuid: dropdown.selectedItem.uuid,
+            collectionUuid: collection.uuid,
         });
         this.popdown();
     }

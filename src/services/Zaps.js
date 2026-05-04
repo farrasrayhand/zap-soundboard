@@ -191,12 +191,12 @@ export class Zaps extends Service {
         const existing = this.#groups.find(g => g.uuid === groupUuid);
         if (existing) {
             console.debug(`Group with UUID "${groupUuid}" already exists, updating.`);
+            if (existing.collectionUuid !== collectionUuid) {
+                console.warn(`Group "${existing.name}" (UUID: ${groupUuid}) already exists in another collection, not moving.`);
+                return existing;
+            }
             this.renameGroup({ group: existing, name });
             if (position !== null) this.#updateGroupProperty(existing, 'position', position);
-            if (existing.collectionUuid !== collectionUuid) {
-                this.#updateGroupProperty(existing, 'groupCollectionUuid', collectionUuid);
-                existing.collectionUuid = collectionUuid;
-            }
             return existing;
         }
 
@@ -311,9 +311,12 @@ export class Zaps extends Service {
         const existing = this.#zaps.find(z => z.uuid === zapUuid);
         if (existing) {
             console.debug(`Zap with UUID "${zapUuid}" already exists, updating properties.`);
+            if (existing.collectionUuid !== collectionUuid) {
+                console.warn(`Zap "${existing.name}" (UUID: ${zapUuid}) already exists in another collection, not moving.`);
+                return existing;
+            }
             // Update properties if they differ
             this.rename({ zap: existing, name });
-            this.changeCollection({ zap: existing, collectionUuid });
             this.changeColor({ zap: existing, color });
             this.loop({ zap: existing, loop });
             this.changeVolume({ zap: existing, volume });

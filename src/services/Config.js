@@ -199,30 +199,34 @@ export class Config extends Service {
 
             const colMap = new Map(); // Old Collection UUID -> New Collection Object
 
+            // Build a name→collection lookup from existing collections
+            const existingByName = new Map();
+            for (let i = 0; i < globalThis.collections.get_n_items(); i++) {
+                const c = globalThis.collections.get_item(i);
+                existingByName.set(c.name, c);
+            }
+
             for (const colData of metadata.collections) {
                 let collection = null;
+                const localWithSameName = existingByName.get(colData.name);
 
-                // Handle replacement
-                if (replace) {
-                    for (let i = 0; i < globalThis.collections.get_n_items(); i++) {
-                        const existing = globalThis.collections.get_item(i);
-                        if (existing.name === colData.name) {
-                            // Clear existing content instead of removing the collection
-                            // This prevents auto-recreation of default collection
-                            globalThis.zaps.removeAllOfCollection({ collection: existing, deleteFiles: false });
-                            collection = existing;
-                            break;
-                        }
-                    }
-                }
-
-                if (!collection) {
+                if (replace && localWithSameName) {
+                    // Replace: clear existing content and reuse the collection
+                    globalThis.zaps.removeAllOfCollection({ collection: localWithSameName, deleteFiles: false });
+                    collection = localWithSameName;
+                } else if (!replace && localWithSameName) {
+                    // Keep Both with name conflict: create new collection WITHOUT the import UUID
+                    // to avoid accidentally merging into a local collection with a matching UUID
+                    collection = globalThis.collections.add({ name: colData.name, uuid: null });
+                } else {
+                    // No name conflict: use the import UUID to preserve identity
                     collection = globalThis.collections.add({
                         name: colData.name,
                         uuid: colData.uuid,
                     });
                 }
                 colMap.set(colData.uuid, collection);
+                existingByName.set(collection.name, collection);
             }
 
             // Import Groups if present (version 2+)
