@@ -27,17 +27,15 @@ export class AddZapPopup extends Gtk.Widget {
     #groupEntry;
     /** @type {Gtk.Revealer} */
     #revealer;
-    /** @type {Gtk.Popover} */
-    #groupPopover;
-    /** @type {Gtk.ListBox} */
-    #groupListBox;
+    /** @type {Gtk.DropDown} */
+    #groupDropDown;
 
     static {
         GObject.registerClass({
             GTypeName: 'ZapAddZapPopup',
             CssName: 'add-zap-popup',
             Template: 'resource:///fr/romainvigier/zap/ui/AddZapPopup.ui',
-            InternalChildren: ['colorChooser', 'fileButton', 'nameEntry', 'groupEntry', 'revealer', 'groupMenuButton', 'groupListBox', 'groupPopover'],
+            InternalChildren: ['colorChooser', 'fileButton', 'nameEntry', 'groupEntry', 'revealer', 'groupDropDown'],
         }, this);
     }
 
@@ -52,55 +50,33 @@ export class AddZapPopup extends Gtk.Widget {
         this.#nameEntry = this._nameEntry;
         this.#groupEntry = this._groupEntry;
         this.#revealer = this._revealer;
-        this.#groupPopover = this._groupPopover;
-        this.#groupListBox = this._groupListBox;
-
-        this._groupMenuButton.connect('notify::active', (button) => {
-            if (button.active)
-                this.#refreshGroupList();
-        });
+        this.#groupDropDown = this._groupDropDown;
 
         this.#setupActions();
     }
 
-    #refreshGroupList() {
+    #refreshGroupDropdown() {
         const root = this.get_root();
         if (!root || !root.selectedCollection) return;
 
         const collectionUuid = root.selectedCollection.uuid;
         const names = globalThis.zaps.getGroupNames(collectionUuid);
-        
-        // Clear existing
-        let child = this._groupListBox.get_first_child();
-        while (child) {
-            this._groupListBox.remove(child);
-            child = this._groupListBox.get_first_child();
-        }
 
-        names.forEach(name => {
-            const label = new Gtk.Label({ label: name, xalign: 0, margin_start: 12, margin_end: 12, margin_top: 6, margin_bottom: 6 });
-            const row = new Gtk.ListBoxRow({ child: label });
-            row._groupName = name;
-            this._groupListBox.append(row);
-        });
-        
-        if (names.length === 0) {
-            const label = new Gtk.Label({ label: _('No existing groups'), margin: 12 });
-            this._groupListBox.append(new Gtk.ListBoxRow({ child: label, sensitive: false }));
-        }
+        const model = new Gtk.StringList();
+        names.forEach(name => model.append(name));
+        this.#groupDropDown.model = model;
+        this.#groupDropDown.sensitive = names.length > 0;
     }
 
     /**
-     * Callback when a group row is activated.
+     * Callback when the group dropdown selection changes.
      *
-     * @param {Gtk.ListBox} listbox ListBox.
-     * @param {Gtk.ListBoxRow} row Row.
+     * @param {Gtk.DropDown} dropdown The dropdown.
      */
-    onGroupRowActivated(listbox, row) {
-        if (row._groupName !== undefined) {
-            this.#groupEntry.text = row._groupName;
-            this.#groupPopover.popdown();
-        }
+    onGroupDropDownSelectedItemChanged(dropdown) {
+        const item = dropdown.selectedItem;
+        if (item)
+            this.#groupEntry.text = item.getString();
     }
 
     /**
@@ -131,6 +107,7 @@ export class AddZapPopup extends Gtk.Widget {
         this.#revealer.revealChild = true;
         this.#revealer.grab_focus();
         this.add_css_class('open');
+        this.#refreshGroupDropdown();
     }
 
     /**

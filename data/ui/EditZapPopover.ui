@@ -41,24 +41,10 @@ SPDX-License-Identifier: GPL-3.0-or-later
 							</object>
 						</child>
 						<child>
-							<object class="GtkMenuButton" id="groupMenuButton">
-								<property name="icon-name">pan-down-symbolic</property>
+							<object class="GtkDropDown" id="groupDropDown">
+								<signal name="notify::selected-item" handler="onGroupDropDownSelectedItemChanged"/>
+								<property name="enable-search">true</property>
 								<property name="tooltip-text" translatable="yes">Existing Groups</property>
-								<property name="popover">
-									<object class="GtkPopover" id="groupPopover">
-										<property name="child">
-											<object class="GtkScrolledWindow">
-												<property name="max-content-height">200</property>
-												<property name="propagate-natural-height">true</property>
-												<child>
-													<object class="GtkListBox" id="groupListBox">
-														<signal name="row-activated" handler="onGroupRowActivated"/>
-													</object>
-												</child>
-											</object>
-										</property>
-									</object>
-								</property>
 							</object>
 						</child>
 					</object>
