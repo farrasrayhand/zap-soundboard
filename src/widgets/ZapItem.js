@@ -366,4 +366,26 @@ export class ZapItem extends Gtk.Widget {
         return 'fr.romainvigier.zap-play-symbolic';
     }
 
+    /**
+     * Format time for display.
+     *
+     * @param {ZapItem} item Item.
+     * @param {number} position Position in nanoseconds.
+     * @param {number} duration Duration in nanoseconds.
+     * @returns {string} Formatted time.
+     */
+    getTimestamp(item, position, duration) {
+        if (duration <= 0)
+            return '';
+
+        const format = time => {
+            const totalSeconds = Math.floor(time / 1e9);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        };
+
+        return `${format(position)} / ${format(duration)}`;
+    }
+
 }

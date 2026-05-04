@@ -231,6 +231,8 @@ export class Player extends Service {
         this.zap.playing = false;
         this.zap.paused = false;
         this.zap.progress = 0;
+        this.zap.positionTime = 0;
+        this.zap.durationTime = 0;
         this.zap = null;
         this.emit('play-stopped');
     }
@@ -289,8 +291,11 @@ export class Player extends Service {
         this.#progressTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 10, () => {
             const [positionOk, position] = this.#playbin.query_position(Gst.Format.TIME);
             const [durationOk, duration] = this.#playbin.query_duration(Gst.Format.TIME);
-            if (positionOk && durationOk)
+            if (positionOk && durationOk) {
                 this.zap.progress = position / duration;
+                this.zap.positionTime = position;
+                this.zap.durationTime = duration;
+            }
             return GLib.SOURCE_CONTINUE;
         });
     }

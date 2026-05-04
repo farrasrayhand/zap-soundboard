@@ -51,6 +51,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 								<property name="orientation">vertical</property>
 								<child>
 									<object class="GtkStack" id="zapsStack">
+										<property name="vexpand">true</property>
 										<property name="transition-type">crossfade</property>
 										<property name="hhomogeneous">false</property>
 										<property name="vhomogeneous">false</property>

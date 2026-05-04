@@ -39,4 +39,5 @@ src/widgets/EditZapPopover.js
 src/widgets/FileChooserButton.js
 src/widgets/ProgressBar.js
 src/widgets/Window.js
+src/widgets/ZapGroupSeparator.js
 src/widgets/ZapItem.js

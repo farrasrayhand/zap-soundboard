@@ -168,8 +168,9 @@ export class Window extends Adw.ApplicationWindow {
      * Refresh the Zaps display.
      */
     #refreshZaps() {
-        if (!this.#zapsBox || !this.selectedCollection || !this.#zapsStack)
+        if (!this.#zapsBox || !this.selectedCollection || !this.#zapsStack) {
             return;
+        }
 
         // Clear current content
         let child = this.#zapsBox.get_first_child();
@@ -179,32 +180,37 @@ export class Window extends Adw.ApplicationWindow {
         }
 
         const filteredZaps = [];
-        for (let i = 0; i < globalThis.zaps.get_n_items(); i++) {
+        const nItems = globalThis.zaps.get_n_items();
+        for (let i = 0; i < nItems; i++) {
             const zap = globalThis.zaps.get_item(i);
-            if (zap.collectionUuid === this.selectedCollection.uuid)
+            if (zap && zap.collectionUuid === this.selectedCollection.uuid)
                 filteredZaps.push(zap);
         }
 
-        const filteredGroups = globalThis.zaps.groups.filter(g => g.collectionUuid === this.selectedCollection.uuid);
+        const groups = globalThis.zaps.groups || [];
+        const filteredGroups = groups.filter(g => g && g.collectionUuid === this.selectedCollection.uuid);
 
         if (filteredZaps.length === 0 && filteredGroups.length === 0) {
-            this.#zapsStack.visibleChildName = 'no-zaps';
+            this.#zapsStack.visible_child_name = 'no-zaps';
             return;
         }
 
-        this.#zapsStack.visibleChildName = 'zaps';
+        this.#zapsStack.visible_child_name = 'zaps';
 
-        // Add Ungrouped Zaps if any
-        const ungroupedZaps = filteredZaps.filter(z => !z.groupName).sort((a, b) => a.position - b.position);
-        if (ungroupedZaps.length > 0) {
-            this.#addGroupToLayout('', ungroupedZaps);
-        }
-
+        const displayedZapUuids = new Set();
+        
         // Add Persistent Groups
         filteredGroups.sort((a, b) => a.position - b.position).forEach(group => {
             const groupZaps = filteredZaps.filter(z => z.groupName === group.name).sort((a, b) => a.position - b.position);
             this.#addGroupToLayout(group.name, groupZaps, group);
+            groupZaps.forEach(z => displayedZapUuids.add(z.uuid));
         });
+
+        // Add remaining Zaps (ungrouped or non-persistent groups)
+        const remainingZaps = filteredZaps.filter(z => !displayedZapUuids.has(z.uuid)).sort((a, b) => a.position - b.position);
+        if (remainingZaps.length > 0) {
+            this.#addGroupToLayout('', remainingZaps);
+        }
     }
 
     /**
@@ -249,8 +255,55 @@ export class Window extends Adw.ApplicationWindow {
 
         const entry = new Gtk.Entry({
             placeholder_text: _('Group Name'),
+            secondary_icon_name: 'pan-down-symbolic',
+            secondary_icon_activatable: true,
+            secondary_icon_sensitive: true,
             margin_top: 12,
         });
+
+        const groupListBox = new Gtk.ListBox();
+        const groupPopover = new Gtk.Popover({ 
+            child: new Gtk.ScrolledWindow({ 
+                max_content_height: 200, 
+                propagate_natural_height: true, 
+                child: groupListBox 
+            }),
+            relative_to: entry
+        });
+
+        const refreshList = () => {
+            let child = groupListBox.get_first_child();
+            while (child) {
+                groupListBox.remove(child);
+                child = groupListBox.get_first_child();
+            }
+            const names = globalThis.zaps.getGroupNames(this.selectedCollection.uuid);
+            names.forEach(name => {
+                const label = new Gtk.Label({ label: name, xalign: 0, margin_start: 12, margin_end: 12, margin_top: 6, margin_bottom: 6 });
+                const row = new Gtk.ListBoxRow({ child: label });
+                row._groupName = name;
+                groupListBox.append(row);
+            });
+            if (names.length === 0) {
+                const label = new Gtk.Label({ label: _('No existing groups'), margin: 12 });
+                groupListBox.append(new Gtk.ListBoxRow({ child: label, sensitive: false }));
+            }
+        };
+
+        entry.connect('icon-release', (e, pos) => {
+            if (pos === Gtk.EntryIconPosition.SECONDARY) {
+                refreshList();
+                groupPopover.popup();
+            }
+        });
+
+        groupListBox.connect('row-activated', (list, row) => {
+            if (row._groupName !== undefined) {
+                entry.text = row._groupName;
+                groupPopover.popdown();
+            }
+        });
+
         dialog.set_extra_child(entry);
 
         dialog.add_response('cancel', _('Cancel'));

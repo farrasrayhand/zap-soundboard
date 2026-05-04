@@ -157,9 +157,36 @@ export class Zaps extends Service {
         return zap;
     }
 
+    /**
+     * Get unique group names for a collection.
+     *
+     * @param {string} collectionUuid Collection UUID.
+     * @returns {string[]} Unique group names.
+     */
+    getGroupNames(collectionUuid) {
+        const names = new Set();
+        this.#groups.filter(g => g.collectionUuid === collectionUuid).forEach(g => names.add(g.name));
+        return Array.from(names).sort();
+    }
+
     addGroup({ name, collectionUuid, uuid = null, position = null }) {
-        console.debug(`Adding new group "${name}"...`);
+        if (!collectionUuid) {
+            console.error('Cannot add group: collectionUuid is missing');
+            return null;
+        }
+
         const groupUuid = uuid || GLib.uuid_string_random();
+
+        // Check for existing group in memory
+        const existing = this.#groups.find(g => g.uuid === groupUuid);
+        if (existing) {
+            console.debug(`Group with UUID "${groupUuid}" already exists, updating.`);
+            this.renameGroup({ group: existing, name });
+            if (position !== null) this.#updateGroupProperty(existing, 'position', position);
+            return existing;
+        }
+
+        console.debug(`Adding new group "${name}"...`);
         const groupPosition = position !== null ? position : this.#groups.filter(g => g.collectionUuid === collectionUuid).length;
         
         const group = new Group({ uuid: groupUuid, name, collectionUuid, position: groupPosition });
@@ -209,19 +236,87 @@ export class Zaps extends Service {
         this.emit('groups-changed');
     }
 
+    moveGroup({ group, position }) {
+        const collectionGroups = this.#groups
+            .filter(g => g.collectionUuid === group.collectionUuid)
+            .sort((a, b) => a.position - b.position);
+        
+        const oldPosition = group.position;
+        const newPosition = Math.max(0, Math.min(position, collectionGroups.length - 1));
+        
+        if (oldPosition === newPosition) return;
+
+        const diff = oldPosition - newPosition;
+        
+        collectionGroups.forEach(g => {
+            if (g === group) {
+                this.#updateGroupProperty(group, 'position', newPosition);
+                return;
+            }
+            if (diff < 0 && (g.position <= oldPosition || g.position > newPosition)) return;
+            if (diff > 0 && (g.position < newPosition || g.position >= oldPosition)) return;
+            this.#updateGroupProperty(g, 'position', g.position + Math.sign(diff));
+        });
+        
+        this.emit('groups-changed');
+    }
+
+    #updateGroupProperty(group, property, value) {
+        const valStr = typeof value === 'string' ? `"${value}"` : value;
+        const sparqlProperty = property === 'position' ? 'groupPosition' : property;
+        globalThis.database.update(
+            `DELETE { ?group zap:${sparqlProperty} ?v } INSERT { ?group zap:${sparqlProperty} ${valStr} } 
+             WHERE { ?group a zap:Group; zap:uuid "${group.uuid}"; zap:${sparqlProperty} ?v }`
+        );
+        group[property] = value;
+    }
+
     add({ name, collection, uri, color = Color.GRAY, loop = false, volume = 1, groupName = '', hotkey = '', uuid = null, position = null }) {
+        if (!collection || !collection.uuid) {
+            console.error('Cannot add zap: collection or collection UUID is missing');
+            return null;
+        }
+
+        const collectionUuid = collection.uuid;
+        const zapUuid = uuid || GLib.uuid_string_random();
+
+        // Ensure the group exists if groupName is provided
+        if (groupName && !this.#groups.find(g => g.name === groupName && g.collectionUuid === collectionUuid)) {
+            this.addGroup({ name: groupName, collectionUuid: collectionUuid });
+        }
+
+        // Check for existing zap in memory
+        const existing = this.#zaps.find(z => z.uuid === zapUuid);
+        if (existing) {
+            console.debug(`Zap with UUID "${zapUuid}" already exists, updating properties.`);
+            // Update properties if they differ
+            this.rename({ zap: existing, name });
+            this.changeCollection({ zap: existing, collectionUuid });
+            this.changeColor({ zap: existing, color });
+            this.loop({ zap: existing, loop });
+            this.changeVolume({ zap: existing, volume });
+            this.changeGroupName({ zap: existing, groupName });
+            this.changeHotkey({ zap: existing, hotkey });
+            return existing;
+        }
+
         const originalFile = Gio.File.new_for_uri(uri);
         if (!originalFile.query_exists(this.#cancellable))
             throw new Error(`File '${uri}' does not exist.`);
-        const zapUuid = uuid || GLib.uuid_string_random();
+        
         const originalFileName = originalFile.get_basename();
         const extension = originalFileName.substring(originalFileName.lastIndexOf('.') + 1) || originalFileName;
         const file = ZAPS_DIR.get_child(`${zapUuid}.${extension}`);
-        originalFile.copy(file, Gio.FileCopyFlags.NONE, this.#cancellable, null);
+        
+        try {
+            originalFile.copy(file, Gio.FileCopyFlags.OVERWRITE, this.#cancellable, null);
+        } catch (e) {
+            console.warn(`Failed to copy sound file: ${e.message}`);
+        }
 
         const zap = new Zap({
-            uuid: zapUuid, name, collectionUuid: collection.uuid, file, color, loop, volume,
-            position: position !== null ? position : this.#getTotalInCollection(collection.uuid),
+            uuid: zapUuid, name, collectionUuid: collectionUuid, file, color, loop, volume,
+            position: position !== null ? position : this.#getTotalInCollection(collectionUuid),
             groupName,
             hotkey,
         });
@@ -275,7 +370,16 @@ export class Zaps extends Service {
 
     changeColor({ zap, color }) {
         if (zap.color === color) return;
-        this.#updateProperty(zap, 'color', color.id);
+        
+        globalThis.database.update(
+            `DELETE { ?zap zap:color ?v } INSERT { ?zap zap:color "${color.id}" } 
+             WHERE { ?zap a zap:Zap; zap:uuid "${zap.uuid}"; zap:color ?v }`
+        );
+        
+        zap.color = color;
+        const index = this.#zaps.indexOf(zap);
+        this.emit('items-changed', index, 1, 1);
+        this.emit('zap-updated', zap.uuid, 'color');
     }
 
     loop({ zap, loop }) {

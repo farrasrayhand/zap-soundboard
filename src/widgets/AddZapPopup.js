@@ -27,13 +27,17 @@ export class AddZapPopup extends Gtk.Widget {
     #groupEntry;
     /** @type {Gtk.Revealer} */
     #revealer;
+    /** @type {Gtk.Popover} */
+    #groupPopover;
+    /** @type {Gtk.ListBox} */
+    #groupListBox;
 
     static {
         GObject.registerClass({
             GTypeName: 'ZapAddZapPopup',
             CssName: 'add-zap-popup',
             Template: 'resource:///fr/romainvigier/zap/ui/AddZapPopup.ui',
-            InternalChildren: ['colorChooser', 'fileButton', 'nameEntry', 'groupEntry', 'revealer'],
+            InternalChildren: ['colorChooser', 'fileButton', 'nameEntry', 'groupEntry', 'revealer', 'groupMenuButton', 'groupListBox', 'groupPopover'],
         }, this);
     }
 
@@ -48,8 +52,55 @@ export class AddZapPopup extends Gtk.Widget {
         this.#nameEntry = this._nameEntry;
         this.#groupEntry = this._groupEntry;
         this.#revealer = this._revealer;
+        this.#groupPopover = this._groupPopover;
+        this.#groupListBox = this._groupListBox;
+
+        this._groupMenuButton.connect('notify::active', (button) => {
+            if (button.active)
+                this.#refreshGroupList();
+        });
 
         this.#setupActions();
+    }
+
+    #refreshGroupList() {
+        const root = this.get_root();
+        if (!root || !root.selectedCollection) return;
+
+        const collectionUuid = root.selectedCollection.uuid;
+        const names = globalThis.zaps.getGroupNames(collectionUuid);
+        
+        // Clear existing
+        let child = this._groupListBox.get_first_child();
+        while (child) {
+            this._groupListBox.remove(child);
+            child = this._groupListBox.get_first_child();
+        }
+
+        names.forEach(name => {
+            const label = new Gtk.Label({ label: name, xalign: 0, margin_start: 12, margin_end: 12, margin_top: 6, margin_bottom: 6 });
+            const row = new Gtk.ListBoxRow({ child: label });
+            row._groupName = name;
+            this._groupListBox.append(row);
+        });
+        
+        if (names.length === 0) {
+            const label = new Gtk.Label({ label: _('No existing groups'), margin: 12 });
+            this._groupListBox.append(new Gtk.ListBoxRow({ child: label, sensitive: false }));
+        }
+    }
+
+    /**
+     * Callback when a group row is activated.
+     *
+     * @param {Gtk.ListBox} listbox ListBox.
+     * @param {Gtk.ListBoxRow} row Row.
+     */
+    onGroupRowActivated(listbox, row) {
+        if (row._groupName !== undefined) {
+            this.#groupEntry.text = row._groupName;
+            this.#groupPopover.popdown();
+        }
     }
 
     /**
@@ -111,7 +162,7 @@ export class AddZapPopup extends Gtk.Widget {
         this.#fileButton.file = null;
         this.#nameEntry.text = '';
         this.#groupEntry.text = '';
-        this.#colorChooser.color = Color.NONE;
+        this.#colorChooser.color = Color.GRAY;
     }
 
     /**
@@ -147,6 +198,19 @@ export class AddZapPopup extends Gtk.Widget {
     }
 
     /**
+     * Callback when the group entry is activated.
+     *
+     * @param {Gtk.Entry} entry Group entry.
+     */
+    onGroupEntryActivated(entry) {
+        if (!this.#fileButton.file || !this.#nameEntry.text)
+            return;
+        this.#add();
+        this.close();
+        this.reset();
+    }
+
+    /**
      * Callback when a click on an icon of the name entry is released.
      *
      * @param {Gtk.Entry} entry Name entry.
@@ -172,9 +236,15 @@ export class AddZapPopup extends Gtk.Widget {
      * Add a new Zap with the current values.
      */
     #add() {
+        const root = this.get_root();
+        if (!root || !root.selectedCollection) {
+            console.error('No collection selected');
+            return;
+        }
+
         globalThis.zaps.add({
             name: this.#nameEntry.text,
-            collection: this.get_root().selectedCollection,
+            collection: root.selectedCollection,
             uri: this.#fileButton.file.get_uri(),
             color: this.#colorChooser.color,
             groupName: this.#groupEntry.text,

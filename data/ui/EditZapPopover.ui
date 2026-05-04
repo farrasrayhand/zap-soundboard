@@ -27,10 +27,40 @@ SPDX-License-Identifier: GPL-3.0-or-later
 					</object>
 				</child>
 				<child>
-					<object class="GtkEntry" id="groupEntry">
-						<signal name="activate" handler="onGroupEntryActivated"/>
-						<property name="placeholder-text" translatable="yes">Group</property>
-						<property name="tooltip-text" translatable="yes">Group</property>
+					<object class="GtkBox">
+						<property name="spacing">0</property>
+						<style>
+							<class name="linked"/>
+						</style>
+						<child>
+							<object class="GtkEntry" id="groupEntry">
+								<property name="hexpand">true</property>
+								<signal name="activate" handler="onGroupEntryActivated"/>
+								<property name="placeholder-text" translatable="yes">Group</property>
+								<property name="tooltip-text" translatable="yes">Group</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkMenuButton" id="groupMenuButton">
+								<property name="icon-name">pan-down-symbolic</property>
+								<property name="tooltip-text" translatable="yes">Existing Groups</property>
+								<property name="popover">
+									<object class="GtkPopover" id="groupPopover">
+										<property name="child">
+											<object class="GtkScrolledWindow">
+												<property name="max-content-height">200</property>
+												<property name="propagate-natural-height">true</property>
+												<child>
+													<object class="GtkListBox" id="groupListBox">
+														<signal name="row-activated" handler="onGroupRowActivated"/>
+													</object>
+												</child>
+											</object>
+										</property>
+									</object>
+								</property>
+							</object>
+						</child>
 					</object>
 				</child>
 				<child>

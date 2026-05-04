@@ -120,6 +120,31 @@ SPDX-License-Identifier: GPL-3.0-or-later
 										</style>
 									</object>
 								</child>
+								<child>
+									<object class="GtkLabel" id="timestampLabel">
+										<property name="valign">center</property>
+										<binding name="label">
+											<closure type="gchararray" function="getTimestamp">
+												<lookup name="position-time" type="Zap">
+													<lookup name="zap">ZapZapItem</lookup>
+												</lookup>
+												<lookup name="duration-time" type="Zap">
+													<lookup name="zap">ZapZapItem</lookup>
+												</lookup>
+											</closure>
+										</binding>
+										<binding name="visible">
+											<lookup name="playing" type="Zap">
+												<lookup name="zap">ZapZapItem</lookup>
+											</lookup>
+										</binding>
+										<style>
+											<class name="dim-label"/>
+											<class name="caption"/>
+											<class name="timestamp"/>
+										</style>
+									</object>
+								</child>
 							</object>
 						</property>
 						<accessibility>

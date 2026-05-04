@@ -151,6 +151,16 @@ export class Collections extends Service {
      * @returns {Collection} The added collection.
      */
     add({ name, uuid = null }) {
+        if (uuid) {
+            const existing = this.#collections.find(c => c.uuid === uuid);
+            if (existing) {
+                console.debug(`Collection with UUID "${uuid}" already exists.`);
+                if (existing.name !== name)
+                    this.rename({ collection: existing, name });
+                return existing;
+            }
+        }
+
         console.debug(`Adding new "${name}" collection...`);
 
         const collection = new Collection({

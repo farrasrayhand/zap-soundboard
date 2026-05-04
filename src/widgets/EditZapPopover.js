@@ -23,6 +23,10 @@ export class EditZapPopover extends Gtk.Popover {
     #groupEntry;
     /** @type {Gtk.Entry} */
     #hotkeyEntry;
+    /** @type {Gtk.Popover} */
+    #groupPopover;
+    /** @type {Gtk.ListBox} */
+    #groupListBox;
 
     static {
         GObject.registerClass({
@@ -32,7 +36,7 @@ export class EditZapPopover extends Gtk.Popover {
                 zap: GObject.ParamSpec.object('zap', 'Zap', 'Zap', GObject.ParamFlags.READWRITE, Zap),
                 collections: GObject.ParamSpec.object('collections', 'Collections', 'Collections', GObject.ParamFlags.READWRITE, Gio.ListModel),
             },
-            InternalChildren: ['nameEntry', 'groupEntry', 'hotkeyEntry'],
+            InternalChildren: ['nameEntry', 'groupEntry', 'hotkeyEntry', 'groupMenuButton', 'groupListBox', 'groupPopover'],
         }, this);
     }
 
@@ -52,8 +56,54 @@ export class EditZapPopover extends Gtk.Popover {
         this.#nameEntry = this._nameEntry;
         this.#groupEntry = this._groupEntry;
         this.#hotkeyEntry = this._hotkeyEntry;
+        this.#groupPopover = this._groupPopover;
+        this.#groupListBox = this._groupListBox;
+
+        this._groupMenuButton.connect('notify::active', (button) => {
+            if (button.active)
+                this.#refreshGroupList();
+        });
 
         this.#setupHotkeyEntry(this.#hotkeyEntry);
+    }
+
+    #refreshGroupList() {
+        const collectionUuid = this.zap ? this.zap.collectionUuid : null;
+        if (!collectionUuid) return;
+
+        const names = globalThis.zaps.getGroupNames(collectionUuid);
+        
+        // Clear existing
+        let child = this.#groupListBox.get_first_child();
+        while (child) {
+            this.#groupListBox.remove(child);
+            child = this.#groupListBox.get_first_child();
+        }
+
+        names.forEach(name => {
+            const label = new Gtk.Label({ label: name, xalign: 0, margin_start: 12, margin_end: 12, margin_top: 6, margin_bottom: 6 });
+            const row = new Gtk.ListBoxRow({ child: label });
+            row._groupName = name;
+            this.#groupListBox.append(row);
+        });
+        
+        if (names.length === 0) {
+            const label = new Gtk.Label({ label: _('No existing groups'), margin: 12 });
+            this.#groupListBox.append(new Gtk.ListBoxRow({ child: label, sensitive: false }));
+        }
+    }
+
+    /**
+     * Callback when a group row is activated.
+     *
+     * @param {Gtk.ListBox} listbox ListBox.
+     * @param {Gtk.ListBoxRow} row Row.
+     */
+    onGroupRowActivated(listbox, row) {
+        if (row._groupName !== undefined) {
+            this.#groupEntry.text = row._groupName;
+            this.#groupPopover.popdown();
+        }
     }
 
     /**

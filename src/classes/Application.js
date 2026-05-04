@@ -182,8 +182,14 @@ export class Application extends Adw.Application {
             'zap-item-color-dark.template.css',
         ].forEach(fileName => {
             const gfile = Gio.File.new_for_uri(`resource:///fr/romainvigier/zap/css/${fileName}`);
-            const [ok, contents, etag] = gfile.load_contents(null);
-            this.#cssTemplates.set(fileName, decoder.decode(contents));
+            try {
+                const [ok, contents, etag] = gfile.load_contents(null);
+                this.#cssTemplates.set(fileName, decoder.decode(contents));
+            } catch (e) {
+                console.warn(`Could not load CSS template ${fileName}: ${e.message}`);
+                // Fallback to empty string to avoid crash during replaceAll
+                this.#cssTemplates.set(fileName, '');
+            }
         });
     }
 

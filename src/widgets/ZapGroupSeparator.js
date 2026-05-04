@@ -49,6 +49,34 @@ export class ZapGroupSeparator extends Gtk.Box {
 
         // Add edit button for persistent groups
         if (this.group) {
+            const moveUpButton = new Gtk.Button({
+                icon_name: 'go-up-symbolic',
+                tooltip_text: _('Move Group Up'),
+            });
+            moveUpButton.add_css_class('flat');
+            moveUpButton.add_css_class('circular');
+            moveUpButton.connect('clicked', () => {
+                globalThis.zaps.moveGroup({
+                    group: this.group,
+                    position: this.group.position - 1,
+                });
+            });
+            this.append(moveUpButton);
+
+            const moveDownButton = new Gtk.Button({
+                icon_name: 'go-down-symbolic',
+                tooltip_text: _('Move Group Down'),
+            });
+            moveDownButton.add_css_class('flat');
+            moveDownButton.add_css_class('circular');
+            moveDownButton.connect('clicked', () => {
+                globalThis.zaps.moveGroup({
+                    group: this.group,
+                    position: this.group.position + 1,
+                });
+            });
+            this.append(moveDownButton);
+
             const editButton = new Gtk.Button({
                 icon_name: 'fr.romainvigier.zap-edit-symbolic',
                 tooltip_text: _('Edit Group'),

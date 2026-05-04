@@ -28,6 +28,8 @@ export class Zap extends GObject.Object {
                 playing: GObject.ParamSpec.boolean('playing', 'Playing', 'Playing', GObject.ParamFlags.READWRITE, false),
                 paused: GObject.ParamSpec.boolean('paused', 'Paused', 'Paused', GObject.ParamFlags.READWRITE, false),
                 progress: GObject.ParamSpec.double('progress', 'Progress', 'Progress', GObject.ParamFlags.READWRITE, 0.0, 1.0, 0.0),
+                positionTime: GObject.ParamSpec.double('position-time', 'Position Time', 'Position Time', GObject.ParamFlags.READWRITE, 0, 1e18, 0),
+                durationTime: GObject.ParamSpec.double('duration-time', 'Duration Time', 'Duration Time', GObject.ParamFlags.READWRITE, 0, 1e18, 0),
                 position: GObject.ParamSpec.uint('position', 'Position', 'Position', GObject.ParamFlags.READWRITE, 0, GLib.MAXUINT32, 0),
                 groupName: GObject.ParamSpec.string('group-name', 'Group Name', 'Group Name', GObject.ParamFlags.READWRITE, ''),
                 hotkey: GObject.ParamSpec.string('hotkey', 'Hotkey', 'Hotkey', GObject.ParamFlags.READWRITE, ''),
@@ -62,6 +64,8 @@ export class Zap extends GObject.Object {
         playing = false,
         paused = false,
         progress = 0,
+        positionTime = 0,
+        durationTime = 0,
         position = 0,
         groupName = '',
         hotkey = '',
@@ -129,6 +133,18 @@ export class Zap extends GObject.Object {
          */
         this.progress = progress;
         /**
+         * The Zap's current position in nanoseconds.
+         *
+         * @type {number}
+         */
+        this.positionTime = positionTime;
+        /**
+         * The Zap's duration in nanoseconds.
+         *
+         * @type {number}
+         */
+        this.durationTime = durationTime;
+        /**
          * Position of the Zap in its collection as an unsigned integer.
          *
          * @type {number}
@@ -164,6 +180,8 @@ export class Zap extends GObject.Object {
             playing: new GLib.Variant('b', this.playing),
             paused: new GLib.Variant('b', this.paused),
             progress: new GLib.Variant('d', this.progress),
+            positionTime: new GLib.Variant('d', this.positionTime),
+            durationTime: new GLib.Variant('d', this.durationTime),
             position: new GLib.Variant('i', this.position),
             groupName: new GLib.Variant('s', this.groupName || ''),
             hotkey: new GLib.Variant('s', this.hotkey || ''),
