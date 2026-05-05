@@ -34,6 +34,8 @@ export class Zap extends GObject.Object {
                 position: GObject.ParamSpec.uint('position', 'Position', 'Position', GObject.ParamFlags.READWRITE, 0, GLib.MAXUINT32, 0),
                 groupName: GObject.ParamSpec.string('group-name', 'Group Name', 'Group Name', GObject.ParamFlags.READWRITE, ''),
                 hotkey: GObject.ParamSpec.string('hotkey', 'Hotkey', 'Hotkey', GObject.ParamFlags.READWRITE, ''),
+                nextSoundUuid: GObject.ParamSpec.string('next-sound-uuid', 'Next Sound UUID', 'Next Sound UUID', GObject.ParamFlags.READWRITE, ''),
+                gap: GObject.ParamSpec.double('gap', 'Gap', 'Gap', GObject.ParamFlags.READWRITE, 0, 1e18, 0),
             },
         }, this);
     }
@@ -56,6 +58,8 @@ export class Zap extends GObject.Object {
      * @param {number} params.position Position in the collection, an unsigned integer.
      * @param {string} params.groupName Name of the group.
      * @param {string} params.hotkey Hotkey.
+     * @param {string} params.nextSoundUuid Next sound UUID.
+     * @param {number} params.gap Gap in nanoseconds before next sound.
      */
     constructor({
         uuid = '',
@@ -74,6 +78,8 @@ export class Zap extends GObject.Object {
         position = 0,
         groupName = '',
         hotkey = '',
+        nextSoundUuid = '',
+        gap = 0,
         ...params
     } = {}) {
         super(params);
@@ -173,6 +179,18 @@ export class Zap extends GObject.Object {
          * @type {string}
          */
         this.hotkey = hotkey || '';
+        /**
+         * UUID of the next Zap to play after this one ends.
+         *
+         * @type {string}
+         */
+        this.nextSoundUuid = nextSoundUuid || '';
+        /**
+         * Gap in nanoseconds before playing the next sound.
+         *
+         * @type {number}
+         */
+        this.gap = gap;
     }
 
     /**
@@ -197,6 +215,8 @@ export class Zap extends GObject.Object {
             position: new GLib.Variant('i', this.position),
             groupName: new GLib.Variant('s', this.groupName || ''),
             hotkey: new GLib.Variant('s', this.hotkey || ''),
+            nextSoundUuid: new GLib.Variant('s', this.nextSoundUuid || ''),
+            gap: new GLib.Variant('d', this.gap),
         };
     }
 

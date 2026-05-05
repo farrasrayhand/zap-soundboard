@@ -33,7 +33,7 @@ export class Config extends Service {
         soundsDir.make_directory(null);
 
         const metadata = {
-            version: 5,
+            version: 6,
             settings: {
                 safetyMode: globalThis.settings.get_boolean('safety-mode'),
                 hideStopButton: globalThis.settings.get_boolean('hide-stop-button'),
@@ -88,6 +88,8 @@ export class Config extends Service {
                 position: zap.position,
                 groupName: zap.groupName || '', // Include group assignment
                 hotkey: zap.hotkey || '',
+                nextSoundUuid: zap.nextSoundUuid || '',
+                gap: zap.gap || 0,
             });
 
             // Copy sound file
@@ -167,7 +169,7 @@ export class Config extends Service {
             const [ok, contents] = metadataFile.load_contents(null);
             const metadata = JSON.parse(new TextDecoder().decode(contents));
 
-            const SUPPORTED_VERSIONS = [1, 2, 3, 4, 5];
+            const SUPPORTED_VERSIONS = [1, 2, 3, 4, 5, 6];
             if (metadata.version && !SUPPORTED_VERSIONS.includes(metadata.version))
                 throw new Error(`Unsupported export version: ${metadata.version}. Please update the app.`);
 
@@ -290,6 +292,8 @@ export class Config extends Service {
                             volume: zapData.volume,
                             groupName: zapData.groupName || '',
                             hotkey: zapData.hotkey || '',
+                            nextSoundUuid: zapData.nextSoundUuid || '',
+                            gap: zapData.gap || 0,
                             uuid: zapData.uuid,
                             position: zapData.position,
                         });

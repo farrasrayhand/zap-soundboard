@@ -30,6 +30,16 @@ export class EditZapPopover extends Gtk.Popover {
     #startSecSpin;
     /** @type {Gtk.SpinButton} */
     #startMsSpin;
+    /** @type {Gtk.DropDown} */
+    #nextSoundDropDown;
+    /** @type {Gtk.SpinButton} */
+    #gapSpin;
+    /** @type {number[]} */
+    #nextSoundUuids = [];
+    /** @type {?Zap} */
+    #connectedZap = null;
+    /** @type {number[]} */
+    #zapConnections = [];
 
     static {
         GObject.registerClass({
@@ -39,7 +49,7 @@ export class EditZapPopover extends Gtk.Popover {
                 zap: GObject.ParamSpec.object('zap', 'Zap', 'Zap', GObject.ParamFlags.READWRITE, Zap),
                 collections: GObject.ParamSpec.object('collections', 'Collections', 'Collections', GObject.ParamFlags.READWRITE, Gio.ListModel),
             },
-            InternalChildren: ['nameEntry', 'hotkeyEntry', 'groupDropDown', 'startMinSpin', 'startSecSpin', 'startMsSpin'],
+            InternalChildren: ['nameEntry', 'hotkeyEntry', 'groupDropDown', 'startMinSpin', 'startSecSpin', 'startMsSpin', 'nextSoundDropDown', 'gapSpin'],
         }, this);
     }
 
@@ -62,6 +72,8 @@ export class EditZapPopover extends Gtk.Popover {
         this.#startMinSpin = this._startMinSpin;
         this.#startSecSpin = this._startSecSpin;
         this.#startMsSpin = this._startMsSpin;
+        this.#nextSoundDropDown = this._nextSoundDropDown;
+        this.#gapSpin = this._gapSpin;
 
         this.#setupHotkeyEntry(this.#hotkeyEntry);
     }
@@ -138,10 +150,23 @@ export class EditZapPopover extends Gtk.Popover {
     onZapChanged(popover) {
         if (!this.zap)
             return;
+
+        if (this.#connectedZap) {
+            this.#zapConnections.forEach(id => this.#connectedZap.disconnect(id));
+            this.#zapConnections = [];
+        }
+        this.#connectedZap = this.zap;
+        this.#zapConnections.push(
+            this.#connectedZap.connect('notify::loop', () => this.#syncNextSoundSensitivity())
+        );
+
         this.#nameEntry.text = this.zap.name;
         this.#hotkeyEntry.text = this.zap.hotkey || '';
         this.#syncStartTimeSpins();
+        this.#syncGapSpin();
         this.#refreshGroupDropdown();
+        this.#refreshNextSoundDropdown();
+        this.#syncNextSoundSensitivity();
     }
 
     /**
@@ -306,6 +331,70 @@ export class EditZapPopover extends Gtk.Popover {
      */
     onStartTimeChanged(button) {
         this.#updateStartTime();
+    }
+
+    #refreshNextSoundDropdown() {
+        const collectionUuid = this.zap ? this.zap.collectionUuid : null;
+        if (!collectionUuid) return;
+
+        this.#nextSoundUuids = [''];
+        const model = new Gtk.StringList();
+        model.append('None');
+
+        for (let i = 0; i < globalThis.zaps.get_n_items(); i++) {
+            const z = globalThis.zaps.get_item(i);
+            if (z.uuid !== this.zap.uuid && z.collectionUuid === collectionUuid) {
+                this.#nextSoundUuids.push(z.uuid);
+                model.append(z.name);
+            }
+        }
+
+        const currentUuid = this.zap.nextSoundUuid || '';
+        let selectedPos = this.#nextSoundUuids.indexOf(currentUuid);
+        if (selectedPos === -1) selectedPos = 0;
+
+        this.#nextSoundDropDown.model = model;
+        this.#nextSoundDropDown.selected = selectedPos;
+    }
+
+    #syncNextSoundSensitivity() {
+        if (!this.zap) return;
+        const disabled = this.zap.loop;
+        this.#nextSoundDropDown.sensitive = !disabled;
+        this.#gapSpin.sensitive = !disabled && !!this.zap.nextSoundUuid;
+    }
+
+    /**
+     * Callback when the next sound dropdown selection changes.
+     *
+     * @param {Gtk.DropDown} dropdown The dropdown.
+     */
+    onNextSoundChanged(dropdown) {
+        if (!this.zap) return;
+        if (!this.is_visible()) return;
+        const pos = dropdown.selected;
+        if (pos < 0 || pos >= this.#nextSoundUuids.length) return;
+        const uuid = this.#nextSoundUuids[pos];
+        globalThis.zaps.changeNextSound({ zap: this.zap, nextSoundUuid: uuid });
+        this.#gapSpin.sensitive = !this.zap.loop && !!uuid;
+    }
+
+    #syncGapSpin() {
+        this.#gapSpin.value = Math.round((this.zap.gap || 0) / 1e9);
+    }
+
+    #updateGap() {
+        if (!this.zap) return;
+        globalThis.zaps.changeGap({ zap: this.zap, gap: this.#gapSpin.value * 1e9 });
+    }
+
+    /**
+     * Callback when the gap spin button changes.
+     *
+     * @param {Gtk.SpinButton} button Gap spin button.
+     */
+    onGapChanged(button) {
+        this.#updateGap();
     }
 
     /**

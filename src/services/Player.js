@@ -36,6 +36,12 @@ export class Player extends Service {
     #progressTimeout = null;
     /** @type {?number} */
     #pendingSeek = null;
+    /** @type {?number} */
+    #nextTimeout = null;
+    /** @type {?number} */
+    #gapStartTime = null;
+    /** @type {?string} */
+    #gapNextUuid = null;
     /** @type {number[]} */
     #connections = [];
 
@@ -229,6 +235,8 @@ export class Player extends Service {
         this.#fadeControlSource.unset_all();
         this.#volumeElement.volume = 1;
         this.#pendingSeek = null;
+        this.#clearNextTimeout();
+        this.#clearGap();
 
         if (this.#fadeTimeout) {
             GLib.source_remove(this.#fadeTimeout);
@@ -330,10 +338,121 @@ export class Player extends Service {
      * Callback function when the Zap finishes playing.
      */
     #onPlayEnded() {
-        if (this.zap.loop)
+        if (this.zap.loop) {
             this.#playbin.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, this.zap.startTime || 0);
+            return;
+        }
+
+        const nextUuid = this.zap.nextSoundUuid;
+        const gap = this.zap.gap || 0;
+
+        if (nextUuid)
+            this.#transitionToNext(nextUuid, gap);
         else
             this.stop();
+    }
+
+    /**
+     * Transition to the next sound after the configured gap.
+     *
+     * @param {string} nextUuid UUID of the next zap to play.
+     * @param {number} gapNs Gap in nanoseconds.
+     */
+    #transitionToNext(nextUuid, gapNs) {
+        this.#stopUpdatingProgress();
+
+        let nextZap;
+        try {
+            nextZap = globalThis.zaps.find({ uuid: nextUuid });
+        } catch (e) {
+            console.warn('Next sound not found, stopping.');
+            this.stop();
+            return;
+        }
+
+        this.#playbin.set_state(Gst.State.READY);
+        this.#disconnectFromZap();
+
+        const gapMs = Math.round(gapNs / 1e6);
+        if (gapMs > 0) {
+            this.#gapStartTime = Date.now();
+            this.#gapNextUuid = nextUuid;
+            this.zap.progress = 0;
+            this.zap.positionTime = gapMs * 1e6;
+            this.zap.durationTime = gapMs * 1e6;
+            this.zap.playing = true;
+            this.#updateGapCountdown();
+        } else {
+            this.#playbin.set_state(Gst.State.READY);
+            this.zap.playing = false;
+            this.zap.progress = 0;
+            this.zap.positionTime = 0;
+            this.zap.durationTime = 0;
+            this.emit('play-stopped');
+            this.zap = null;
+            GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+                this.play(nextZap);
+                return GLib.SOURCE_REMOVE;
+            });
+        }
+    }
+
+    /**
+     * Update the gap countdown progress.
+     */
+    #updateGapCountdown() {
+        if (this.#gapStartTime === null)
+            return;
+        const elapsed = Date.now() - this.#gapStartTime;
+        const gapMs = Math.round((this.zap ? this.zap.durationTime : 0) / 1e6);
+        const remaining = Math.max(0, gapMs - elapsed);
+        if (this.zap) {
+            this.zap.positionTime = remaining * 1e6;
+            this.zap.progress = elapsed / (gapMs || 1);
+        }
+        if (remaining > 0 && this.zap) {
+            this.#nextTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+                this.#nextTimeout = null;
+                this.#updateGapCountdown();
+                return GLib.SOURCE_REMOVE;
+            });
+        } else {
+            const pendingUuid = this.#gapNextUuid;
+            this.#clearGap();
+            this.zap.playing = false;
+            this.zap.progress = 0;
+            this.zap.positionTime = 0;
+            this.zap.durationTime = 0;
+            this.emit('play-stopped');
+            this.zap = null;
+            GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+                try {
+                    const nextZap = globalThis.zaps.find({ uuid: pendingUuid });
+                    this.play(nextZap);
+                } catch (e) {
+                    console.warn('Next sound not found.');
+                }
+                return GLib.SOURCE_REMOVE;
+            });
+        }
+    }
+
+    /**
+     * Clear the gap countdown if active.
+     */
+    #clearGap() {
+        this.#gapStartTime = null;
+        this.#gapNextUuid = null;
+    }
+
+    /**
+     * Clear the next sound timeout if active.
+     */
+    #clearNextTimeout() {
+        if (this.#nextTimeout) {
+            GLib.source_remove(this.#nextTimeout);
+            this.#nextTimeout = null;
+        }
     }
 
     /**

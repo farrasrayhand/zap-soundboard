@@ -252,6 +252,8 @@ class ZapService {
      * @property {GLib.Variant<boolean>} loop Loop.
      * @property {GLib.Variant<number>} startTime Start time offset in nanoseconds.
      * @property {GLib.Variant<number>} volume Volume.
+     * @property {GLib.Variant<string>} nextSoundUuid Next sound UUID.
+     * @property {GLib.Variant<number>} gap Gap in nanoseconds before next sound.
      */
     /**
      * AddZap method implementation.
@@ -263,14 +265,16 @@ class ZapService {
      * @param {AddZapOptions} params.3 Options object.
      * @param {Gio.DBusMethodInvocation} invocation Method invocation.
      */
-    AddZapAsync([name, collectionUuid, uri, { color: colorVariant, loop: loopVariant, startTime: startTimeVariant, volume: volumeVariant }], invocation) {
+    AddZapAsync([name, collectionUuid, uri, { color: colorVariant, loop: loopVariant, startTime: startTimeVariant, volume: volumeVariant, nextSoundUuid: nextSoundUuidVariant, gap: gapVariant }], invocation) {
         try {
             const collection = globalThis.collections.find({ uuid: collectionUuid });
             const color = Color.fromId(colorVariant ? colorVariant.unpack() : undefined);
             const loop = loopVariant ? loopVariant.unpack() : undefined;
             const startTime = startTimeVariant ? startTimeVariant.unpack() : undefined;
             const volume = volumeVariant ? volumeVariant.unpack() : undefined;
-            const zap = globalThis.zaps.add({ name, collection, uri, color, loop, startTime, volume });
+            const nextSoundUuid = nextSoundUuidVariant ? nextSoundUuidVariant.unpack() : undefined;
+            const gap = gapVariant ? gapVariant.unpack() : undefined;
+            const zap = globalThis.zaps.add({ name, collection, uri, color, loop, startTime, volume, nextSoundUuid, gap });
             invocation.return_value(new GLib.Variant('(a{sv})', [zap.toVariant()]));
         } catch (e) {
             invocation.return_dbus_error(pkg.name, e.message);
@@ -303,6 +307,8 @@ class ZapService {
      * @property {GLib.Variant<number>} startTime New start time offset in nanoseconds.
      * @property {GLib.Variant<number>} volume New volume.
      * @property {GLib.Variant<number>} position New position.
+     * @property {GLib.Variant<string>} nextSoundUuid New next sound UUID.
+     * @property {GLib.Variant<number>} gap New gap in nanoseconds.
      */
     /**
      * UpdateZap method implementation.
@@ -312,7 +318,7 @@ class ZapService {
      * @param {UpdateZapProperties} params.1 Properties object.
      * @param {Gio.DBusMethodInvocation} invocation Method invocation.
      */
-    UpdateZapAsync([uuid, { name, collectionUuid, color, loop, startTime, volume, position }], invocation) {
+    UpdateZapAsync([uuid, { name, collectionUuid, color, loop, startTime, volume, position, nextSoundUuid, gap }], invocation) {
         try {
             const zap = globalThis.zaps.find({ uuid });
             if (name)
@@ -329,6 +335,10 @@ class ZapService {
                 globalThis.zaps.changeVolume({ zap, volume: volume.unpack() });
             if (position)
                 globalThis.zaps.changePosition({ zap, position: position.unpack() });
+            if (nextSoundUuid)
+                globalThis.zaps.changeNextSound({ zap, nextSoundUuid: nextSoundUuid.unpack() });
+            if (gap)
+                globalThis.zaps.changeGap({ zap, gap: gap.unpack() });
             invocation.return_value(null);
         } catch (e) {
             invocation.return_dbus_error(pkg.name, e.message);

@@ -83,6 +83,16 @@ zap:hotkey a rdf:Property;
     rdfs:range xsd:string;
     nrl:maxCardinality 1.
 
+zap:nextSoundUuid a rdf:Property;
+    rdfs:domain zap:Zap;
+    rdfs:range xsd:string;
+    nrl:maxCardinality 1.
+
+zap:gap a rdf:Property;
+    rdfs:domain zap:Zap;
+    rdfs:range xsd:double;
+    nrl:maxCardinality 1.
+
 zap:Group a rdfs:Class;
     rdfs:subClassOf zap:Item;
     rdfs:comment "A group of zaps";

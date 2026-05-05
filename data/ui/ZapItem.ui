@@ -145,6 +145,55 @@ SPDX-License-Identifier: GPL-3.0-or-later
 										</style>
 									</object>
 								</child>
+								<child>
+									<object class="GtkLabel" id="connectorLabel">
+										<property name="valign">center</property>
+								<binding name="label">
+									<closure type="gchararray" function="getNextSoundText">
+										<lookup name="next-sound-uuid" type="Zap">
+											<lookup name="zap">ZapZapItem</lookup>
+										</lookup>
+										<lookup name="gap" type="Zap">
+											<lookup name="zap">ZapZapItem</lookup>
+										</lookup>
+									</closure>
+								</binding>
+								<binding name="visible">
+									<closure type="gboolean" function="hasNextSound">
+										<lookup name="next-sound-uuid" type="Zap">
+											<lookup name="zap">ZapZapItem</lookup>
+										</lookup>
+									</closure>
+								</binding>
+										<style>
+											<class name="dim-label"/>
+											<class name="caption"/>
+										</style>
+									</object>
+								</child>
+								<child>
+									<object class="GtkLabel" id="startTimeLabel">
+										<property name="valign">center</property>
+										<binding name="label">
+											<closure type="gchararray" function="getStartTimeText">
+												<lookup name="start-time" type="Zap">
+													<lookup name="zap">ZapZapItem</lookup>
+												</lookup>
+											</closure>
+										</binding>
+										<binding name="visible">
+											<closure type="gboolean" function="hasStartTime">
+												<lookup name="start-time" type="Zap">
+													<lookup name="zap">ZapZapItem</lookup>
+												</lookup>
+											</closure>
+										</binding>
+										<style>
+											<class name="dim-label"/>
+											<class name="caption"/>
+										</style>
+									</object>
+								</child>
 							</object>
 						</property>
 						<accessibility>

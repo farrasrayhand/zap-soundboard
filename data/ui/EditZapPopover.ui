@@ -194,6 +194,68 @@ SPDX-License-Identifier: GPL-3.0-or-later
 					</object>
 				</child>
 				<child>
+					<object class="GtkBox">
+						<child>
+							<object class="GtkImage">
+								<property name="icon-name">go-next-symbolic</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkLabel">
+								<property name="label" translatable="yes">Next sound</property>
+								<property name="xalign">0</property>
+								<property name="margin-end">6</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkDropDown" id="nextSoundDropDown">
+								<signal name="notify::selected-item" handler="onNextSoundChanged"/>
+								<property name="hexpand">true</property>
+								<property name="enable-search">true</property>
+								<property name="tooltip-text" translatable="yes">Sound to play after this ends</property>
+							</object>
+						</child>
+					</object>
+				</child>
+				<child>
+					<object class="GtkBox">
+						<property name="margin-bottom">12</property>
+						<child>
+							<object class="GtkImage">
+								<property name="icon-name">media-playback-pause-symbolic</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkLabel">
+								<property name="label" translatable="yes">Delay before next</property>
+								<property name="xalign">0</property>
+								<property name="margin-end">6</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkSpinButton" id="gapSpin">
+								<signal name="value-changed" handler="onGapChanged"/>
+								<property name="tooltip-text" translatable="yes">Seconds to wait before next sound</property>
+								<property name="digits">1</property>
+								<property name="width-chars">6</property>
+								<property name="adjustment">
+									<object class="GtkAdjustment">
+										<property name="lower">0</property>
+										<property name="upper">999</property>
+										<property name="step-increment">0.1</property>
+										<property name="page-increment">1</property>
+									</object>
+								</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkLabel">
+								<property name="label" translatable="yes">seconds</property>
+							</object>
+						</child>
+					</object>
+				</child>
+				<child>
 					<object class="GtkButton">
 						<signal name="clicked" handler="onSaveButtonClicked"/>
 						<property name="label" translatable="yes">Save</property>

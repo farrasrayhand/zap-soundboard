@@ -383,4 +383,64 @@ export class ZapItem extends Gtk.Widget {
         return `${format(position)} / ${format(duration)}`;
     }
 
+    /**
+     * Get the text for the next sound connector label.
+     *
+     * @param {ZapItem} item Item.
+     * @param {string} nextSoundUuid Next sound UUID.
+     * @returns {string} Connector text.
+     */
+    getNextSoundText(item, nextSoundUuid, gap) {
+        if (!nextSoundUuid)
+            return '';
+        try {
+            const nextZap = globalThis.zaps.find({ uuid: nextSoundUuid });
+            let text = `→ ${nextZap.name}`;
+            if (gap > 0) {
+                const secs = Math.round(gap / 1e9);
+                text += ` (${secs}s delay)`;
+            }
+            return text;
+        } catch (e) {
+            return '';
+        }
+    }
+
+    /**
+     * Check if the zap has a next sound set.
+     *
+     * @param {ZapItem} item Item.
+     * @param {string} nextSoundUuid Next sound UUID.
+     * @returns {boolean} True if next sound is set.
+     */
+    hasNextSound(item, nextSoundUuid) {
+        return !!nextSoundUuid;
+    }
+
+    /**
+     * Get the text for the start time indicator.
+     *
+     * @param {ZapItem} item Item.
+     * @param {number} startTime Start time in nanoseconds.
+     * @returns {string} Formatted start time text.
+     */
+    getStartTimeText(item, startTime) {
+        if (!startTime) return '';
+        const totalSeconds = Math.floor(startTime / 1e9);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `↗ ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    /**
+     * Check if the zap has a start time set.
+     *
+     * @param {ZapItem} item Item.
+     * @param {number} startTime Start time in nanoseconds.
+     * @returns {boolean} True if start time is set.
+     */
+    hasStartTime(item, startTime) {
+        return startTime > 0;
+    }
+
 }

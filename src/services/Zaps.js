@@ -115,7 +115,7 @@ export class Zaps extends Service {
         // Zaps
         const cursor = globalThis.database.query(
             `PREFIX zap: <https://zap.romainvigier.fr#>
-             SELECT ?uuid ?name ?collectionUuid ?uri ?color ?loop ?startTime ?volume ?position ?groupName ?hotkey {
+             SELECT ?uuid ?name ?collectionUuid ?uri ?color ?loop ?startTime ?volume ?position ?groupName ?hotkey ?nextSoundUuid ?gap {
                 ?zap a zap:Zap;
                     zap:uuid ?uuid.
                 OPTIONAL { ?zap zap:name ?name }
@@ -128,7 +128,9 @@ export class Zaps extends Service {
                 OPTIONAL { ?zap zap:position ?position }
                 OPTIONAL { ?zap zap:groupName ?groupName }
                 OPTIONAL { ?zap zap:hotkey ?hotkey }
-            }`
+                OPTIONAL { ?zap zap:nextSoundUuid ?nextSoundUuid }
+                OPTIONAL { ?zap zap:gap ?gap }
+             }`
         );
         while (cursor.next(this.#cancellable)) {
             const data = {};
@@ -148,6 +150,8 @@ export class Zaps extends Service {
                     case 'position': data.position = cursor.get_integer(i); break;
                     case 'groupName': data.groupName = actualValue || ''; break;
                     case 'hotkey': data.hotkey = actualValue || ''; break;
+                    case 'nextSoundUuid': data.nextSoundUuid = actualValue || ''; break;
+                    case 'gap': data.gap = cursor.get_double(i); break;
                 }
             }
             if (data.uuid && !this.#zaps.find(z => z.uuid === data.uuid)) {
@@ -295,7 +299,7 @@ export class Zaps extends Service {
         group[property] = value;
     }
 
-    add({ name, collection, uri, color = Color.GRAY, loop = false, startTime = 0, volume = 1, groupName = '', hotkey = '', uuid = null, position = null }) {
+    add({ name, collection, uri, color = Color.GRAY, loop = false, startTime = 0, volume = 1, groupName = '', hotkey = '', nextSoundUuid = '', gap = 0, uuid = null, position = null }) {
         if (!collection || !collection.uuid) {
             console.error('Cannot add zap: collection or collection UUID is missing');
             return null;
@@ -325,6 +329,8 @@ export class Zaps extends Service {
             this.changeVolume({ zap: existing, volume });
             this.changeGroupName({ zap: existing, groupName });
             this.changeHotkey({ zap: existing, hotkey });
+            this.changeNextSound({ zap: existing, nextSoundUuid });
+            this.changeGap({ zap: existing, gap });
             return existing;
         }
 
@@ -347,6 +353,8 @@ export class Zaps extends Service {
             position: position !== null ? position : this.#getTotalInCollection(collectionUuid),
             groupName,
             hotkey,
+            nextSoundUuid,
+            gap,
         });
 
         const resource = Tracker.Resource.new(`zap:zap:${zapUuid}`);
@@ -362,6 +370,8 @@ export class Zaps extends Service {
         resource.set_int('zap:position', zap.position);
         resource.set_string('zap:groupName', zap.groupName);
         resource.set_string('zap:hotkey', zap.hotkey);
+        resource.set_string('zap:nextSoundUuid', zap.nextSoundUuid);
+        resource.set_double('zap:gap', zap.gap);
         globalThis.database.batch([resource]);
 
         this.#zaps.push(zap);
@@ -471,6 +481,16 @@ export class Zaps extends Service {
     changeHotkey({ zap, hotkey }) {
         if (zap.hotkey === hotkey) return;
         this.#updateProperty(zap, 'hotkey', Tracker.sparql_escape_string(hotkey));
+    }
+
+    changeNextSound({ zap, nextSoundUuid }) {
+        if (zap.nextSoundUuid === nextSoundUuid) return;
+        this.#updateProperty(zap, 'nextSoundUuid', Tracker.sparql_escape_string(nextSoundUuid));
+    }
+
+    changeGap({ zap, gap }) {
+        if (zap.gap === gap) return;
+        this.#updateProperty(zap, 'gap', gap);
     }
 
     #updateProperty(zap, property, value) {
