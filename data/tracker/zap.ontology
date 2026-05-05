@@ -12,7 +12,7 @@
 zap: a nrl:Namespace, nrl:Ontology;
     nrl:prefix "zap";
     rdfs:comment "Zap ontology";
-    nrl:lastModified "2026-05-01T00:00:00Z".
+    nrl:lastModified "2026-05-05T00:00:00Z".
 
 zap:Item a rdfs:Class;
     rdfs:subClassOf rdfs:Resource;
@@ -56,6 +56,11 @@ zap:color a rdf:Property;
 zap:loop a rdf:Property;
     rdfs:domain zap:Zap;
     rdfs:range xsd:boolean;
+    nrl:maxCardinality 1.
+
+zap:startTime a rdf:Property;
+    rdfs:domain zap:Zap;
+    rdfs:range xsd:double;
     nrl:maxCardinality 1.
 
 zap:volume a rdf:Property;

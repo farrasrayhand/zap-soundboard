@@ -115,7 +115,7 @@ export class Zaps extends Service {
         // Zaps
         const cursor = globalThis.database.query(
             `PREFIX zap: <https://zap.romainvigier.fr#>
-             SELECT ?uuid ?name ?collectionUuid ?uri ?color ?loop ?volume ?position ?groupName ?hotkey {
+             SELECT ?uuid ?name ?collectionUuid ?uri ?color ?loop ?startTime ?volume ?position ?groupName ?hotkey {
                 ?zap a zap:Zap;
                     zap:uuid ?uuid.
                 OPTIONAL { ?zap zap:name ?name }
@@ -123,6 +123,7 @@ export class Zaps extends Service {
                 OPTIONAL { ?zap zap:uri ?uri }
                 OPTIONAL { ?zap zap:color ?color }
                 OPTIONAL { ?zap zap:loop ?loop }
+                OPTIONAL { ?zap zap:startTime ?startTime }
                 OPTIONAL { ?zap zap:volume ?volume }
                 OPTIONAL { ?zap zap:position ?position }
                 OPTIONAL { ?zap zap:groupName ?groupName }
@@ -142,6 +143,7 @@ export class Zaps extends Service {
                     case 'uri': data.file = actualValue ? Gio.File.new_for_uri(actualValue) : null; break;
                     case 'color': data.color = actualValue ? Color.fromId(actualValue) : Color.GRAY; break;
                     case 'loop': data.loop = cursor.get_boolean(i); break;
+                    case 'startTime': data.startTime = cursor.get_double(i); break;
                     case 'volume': data.volume = cursor.get_double(i); break;
                     case 'position': data.position = cursor.get_integer(i); break;
                     case 'groupName': data.groupName = actualValue || ''; break;
@@ -293,7 +295,7 @@ export class Zaps extends Service {
         group[property] = value;
     }
 
-    add({ name, collection, uri, color = Color.GRAY, loop = false, volume = 1, groupName = '', hotkey = '', uuid = null, position = null }) {
+    add({ name, collection, uri, color = Color.GRAY, loop = false, startTime = 0, volume = 1, groupName = '', hotkey = '', uuid = null, position = null }) {
         if (!collection || !collection.uuid) {
             console.error('Cannot add zap: collection or collection UUID is missing');
             return null;
@@ -319,6 +321,7 @@ export class Zaps extends Service {
             this.rename({ zap: existing, name });
             this.changeColor({ zap: existing, color });
             this.loop({ zap: existing, loop });
+            this.changeStartTime({ zap: existing, startTime });
             this.changeVolume({ zap: existing, volume });
             this.changeGroupName({ zap: existing, groupName });
             this.changeHotkey({ zap: existing, hotkey });
@@ -340,7 +343,7 @@ export class Zaps extends Service {
         }
 
         const zap = new Zap({
-            uuid: zapUuid, name, collectionUuid: collectionUuid, file, color, loop, volume,
+            uuid: zapUuid, name, collectionUuid: collectionUuid, file, color, loop, startTime, volume,
             position: position !== null ? position : this.#getTotalInCollection(collectionUuid),
             groupName,
             hotkey,
@@ -354,6 +357,7 @@ export class Zaps extends Service {
         resource.set_string('zap:uri', zap.file.get_uri());
         resource.set_string('zap:color', zap.color.id);
         resource.set_boolean('zap:loop', zap.loop);
+        resource.set_double('zap:startTime', zap.startTime);
         resource.set_double('zap:volume', zap.volume);
         resource.set_int('zap:position', zap.position);
         resource.set_string('zap:groupName', zap.groupName);
@@ -426,6 +430,11 @@ export class Zaps extends Service {
     loop({ zap, loop }) {
         if (zap.loop === loop) return;
         this.#updateProperty(zap, 'loop', loop);
+    }
+
+    changeStartTime({ zap, startTime }) {
+        if (zap.startTime === startTime) return;
+        this.#updateProperty(zap, 'startTime', startTime);
     }
 
     changeVolume({ zap, volume }) {

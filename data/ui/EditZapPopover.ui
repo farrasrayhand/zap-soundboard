@@ -124,6 +124,76 @@ SPDX-License-Identifier: GPL-3.0-or-later
 					</object>
 				</child>
 				<child>
+					<object class="GtkBox">
+						<property name="margin-bottom">12</property>
+						<child>
+							<object class="GtkImage">
+								<property name="icon-name">media-seek-forward-symbolic</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkLabel">
+								<property name="label" translatable="yes">Start at</property>
+								<property name="xalign">0</property>
+								<property name="margin-end">6</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkSpinButton" id="startMinSpin">
+								<signal name="value-changed" handler="onStartTimeChanged"/>
+								<property name="tooltip-text" translatable="yes">Minutes</property>
+								<property name="width-chars">3</property>
+								<property name="adjustment">
+									<object class="GtkAdjustment">
+										<property name="lower">0</property>
+										<property name="upper">59</property>
+										<property name="step-increment">1</property>
+									</object>
+								</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkLabel">
+								<property name="label">:</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkSpinButton" id="startSecSpin">
+								<signal name="value-changed" handler="onStartTimeChanged"/>
+								<property name="tooltip-text" translatable="yes">Seconds</property>
+								<property name="width-chars">3</property>
+								<property name="adjustment">
+									<object class="GtkAdjustment">
+										<property name="lower">0</property>
+										<property name="upper">59</property>
+										<property name="step-increment">1</property>
+									</object>
+								</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkLabel">
+								<property name="label">:</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkSpinButton" id="startMsSpin">
+								<signal name="value-changed" handler="onStartTimeChanged"/>
+								<property name="tooltip-text" translatable="yes">Milliseconds</property>
+								<property name="width-chars">4</property>
+								<property name="adjustment">
+									<object class="GtkAdjustment">
+										<property name="lower">0</property>
+										<property name="upper">999</property>
+										<property name="step-increment">1</property>
+										<property name="page-increment">100</property>
+									</object>
+								</property>
+							</object>
+						</child>
+					</object>
+				</child>
+				<child>
 					<object class="GtkButton">
 						<signal name="clicked" handler="onSaveButtonClicked"/>
 						<property name="label" translatable="yes">Save</property>

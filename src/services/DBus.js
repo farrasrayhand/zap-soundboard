@@ -250,6 +250,7 @@ class ZapService {
      * @typedef {object} AddZapOptions
      * @property {GLib.Variant<string>} color Color.
      * @property {GLib.Variant<boolean>} loop Loop.
+     * @property {GLib.Variant<number>} startTime Start time offset in nanoseconds.
      * @property {GLib.Variant<number>} volume Volume.
      */
     /**
@@ -262,13 +263,14 @@ class ZapService {
      * @param {AddZapOptions} params.3 Options object.
      * @param {Gio.DBusMethodInvocation} invocation Method invocation.
      */
-    AddZapAsync([name, collectionUuid, uri, { color: colorVariant, loop: loopVariant, volume: volumeVariant }], invocation) {
+    AddZapAsync([name, collectionUuid, uri, { color: colorVariant, loop: loopVariant, startTime: startTimeVariant, volume: volumeVariant }], invocation) {
         try {
             const collection = globalThis.collections.find({ uuid: collectionUuid });
             const color = Color.fromId(colorVariant ? colorVariant.unpack() : undefined);
             const loop = loopVariant ? loopVariant.unpack() : undefined;
+            const startTime = startTimeVariant ? startTimeVariant.unpack() : undefined;
             const volume = volumeVariant ? volumeVariant.unpack() : undefined;
-            const zap = globalThis.zaps.add({ name, collection, uri, color, loop, volume });
+            const zap = globalThis.zaps.add({ name, collection, uri, color, loop, startTime, volume });
             invocation.return_value(new GLib.Variant('(a{sv})', [zap.toVariant()]));
         } catch (e) {
             invocation.return_dbus_error(pkg.name, e.message);
@@ -298,6 +300,7 @@ class ZapService {
      * @property {GLib.Variant<string>} collectionUuid New collection UUID.
      * @property {GLib.Variant<string>} color New color.
      * @property {GLib.Variant<boolean>} loop New loop state.
+     * @property {GLib.Variant<number>} startTime New start time offset in nanoseconds.
      * @property {GLib.Variant<number>} volume New volume.
      * @property {GLib.Variant<number>} position New position.
      */
@@ -309,7 +312,7 @@ class ZapService {
      * @param {UpdateZapProperties} params.1 Properties object.
      * @param {Gio.DBusMethodInvocation} invocation Method invocation.
      */
-    UpdateZapAsync([uuid, { name, collectionUuid, color, loop, volume, position }], invocation) {
+    UpdateZapAsync([uuid, { name, collectionUuid, color, loop, startTime, volume, position }], invocation) {
         try {
             const zap = globalThis.zaps.find({ uuid });
             if (name)
@@ -320,6 +323,8 @@ class ZapService {
                 globalThis.zaps.changeColor({ zap, color: Color.fromId(color.unpack()) });
             if (loop)
                 globalThis.zaps.loop({ zap, loop: loop.unpack() });
+            if (startTime)
+                globalThis.zaps.changeStartTime({ zap, startTime: startTime.unpack() });
             if (volume)
                 globalThis.zaps.changeVolume({ zap, volume: volume.unpack() });
             if (position)

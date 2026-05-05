@@ -28,6 +28,7 @@ export class Zap extends GObject.Object {
                 playing: GObject.ParamSpec.boolean('playing', 'Playing', 'Playing', GObject.ParamFlags.READWRITE, false),
                 paused: GObject.ParamSpec.boolean('paused', 'Paused', 'Paused', GObject.ParamFlags.READWRITE, false),
                 progress: GObject.ParamSpec.double('progress', 'Progress', 'Progress', GObject.ParamFlags.READWRITE, 0.0, 1.0, 0.0),
+                startTime: GObject.ParamSpec.double('start-time', 'Start Time', 'Start Time', GObject.ParamFlags.READWRITE, 0, 1e18, 0),
                 positionTime: GObject.ParamSpec.double('position-time', 'Position Time', 'Position Time', GObject.ParamFlags.READWRITE, 0, 1e18, 0),
                 durationTime: GObject.ParamSpec.double('duration-time', 'Duration Time', 'Duration Time', GObject.ParamFlags.READWRITE, 0, 1e18, 0),
                 position: GObject.ParamSpec.uint('position', 'Position', 'Position', GObject.ParamFlags.READWRITE, 0, GLib.MAXUINT32, 0),
@@ -49,6 +50,9 @@ export class Zap extends GObject.Object {
      * @param {boolean} params.playing Playing state.
      * @param {boolean} params.paused Paused state.
      * @param {number} params.progress Progress, between 0 and 1.
+     * @param {number} params.startTime Start offset in nanoseconds.
+     * @param {number} params.positionTime Position in nanoseconds.
+     * @param {number} params.durationTime Duration in nanoseconds.
      * @param {number} params.position Position in the collection, an unsigned integer.
      * @param {string} params.groupName Name of the group.
      * @param {string} params.hotkey Hotkey.
@@ -64,6 +68,7 @@ export class Zap extends GObject.Object {
         playing = false,
         paused = false,
         progress = 0,
+        startTime = 0,
         positionTime = 0,
         durationTime = 0,
         position = 0,
@@ -145,6 +150,12 @@ export class Zap extends GObject.Object {
          */
         this.durationTime = durationTime;
         /**
+         * The Zap's start offset in nanoseconds.
+         *
+         * @type {number}
+         */
+        this.startTime = startTime;
+        /**
          * Position of the Zap in its collection as an unsigned integer.
          *
          * @type {number}
@@ -176,6 +187,7 @@ export class Zap extends GObject.Object {
             collectionUuid: new GLib.Variant('s', this.collectionUuid),
             color: new GLib.Variant('s', this.color.id),
             loop: new GLib.Variant('b', this.loop),
+            startTime: new GLib.Variant('d', this.startTime),
             volume: new GLib.Variant('d', this.volume),
             playing: new GLib.Variant('b', this.playing),
             paused: new GLib.Variant('b', this.paused),

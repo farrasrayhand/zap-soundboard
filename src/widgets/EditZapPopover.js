@@ -24,6 +24,12 @@ export class EditZapPopover extends Gtk.Popover {
     #hotkeyEntry;
     /** @type {Gtk.DropDown} */
     #groupDropDown;
+    /** @type {Gtk.SpinButton} */
+    #startMinSpin;
+    /** @type {Gtk.SpinButton} */
+    #startSecSpin;
+    /** @type {Gtk.SpinButton} */
+    #startMsSpin;
 
     static {
         GObject.registerClass({
@@ -33,7 +39,7 @@ export class EditZapPopover extends Gtk.Popover {
                 zap: GObject.ParamSpec.object('zap', 'Zap', 'Zap', GObject.ParamFlags.READWRITE, Zap),
                 collections: GObject.ParamSpec.object('collections', 'Collections', 'Collections', GObject.ParamFlags.READWRITE, Gio.ListModel),
             },
-            InternalChildren: ['nameEntry', 'hotkeyEntry', 'groupDropDown'],
+            InternalChildren: ['nameEntry', 'hotkeyEntry', 'groupDropDown', 'startMinSpin', 'startSecSpin', 'startMsSpin'],
         }, this);
     }
 
@@ -53,6 +59,9 @@ export class EditZapPopover extends Gtk.Popover {
         this.#nameEntry = this._nameEntry;
         this.#hotkeyEntry = this._hotkeyEntry;
         this.#groupDropDown = this._groupDropDown;
+        this.#startMinSpin = this._startMinSpin;
+        this.#startSecSpin = this._startSecSpin;
+        this.#startMsSpin = this._startMsSpin;
 
         this.#setupHotkeyEntry(this.#hotkeyEntry);
     }
@@ -131,6 +140,7 @@ export class EditZapPopover extends Gtk.Popover {
             return;
         this.#nameEntry.text = this.zap.name;
         this.#hotkeyEntry.text = this.zap.hotkey || '';
+        this.#syncStartTimeSpins();
         this.#refreshGroupDropdown();
     }
 
@@ -264,6 +274,38 @@ export class EditZapPopover extends Gtk.Popover {
             zap: this.zap,
             volume: scale.adjustment.value,
         });
+    }
+
+    /**
+     * Sync the MM:SS:ms spin buttons from the zap's startTime.
+     */
+    #syncStartTimeSpins() {
+        const totalMs = Math.round((this.zap.startTime || 0) / 1e6);
+        this.#startMinSpin.value = Math.floor(totalMs / 60000);
+        this.#startSecSpin.value = Math.floor((totalMs % 60000) / 1000);
+        this.#startMsSpin.value = totalMs % 1000;
+    }
+
+    /**
+     * Update the zap's startTime from the three MM:SS:ms spin buttons.
+     */
+    #updateStartTime() {
+        if (!this.zap)
+            return;
+        const totalMs = this.#startMinSpin.value * 60000 + this.#startSecSpin.value * 1000 + this.#startMsSpin.value;
+        globalThis.zaps.changeStartTime({
+            zap: this.zap,
+            startTime: totalMs * 1e6,
+        });
+    }
+
+    /**
+     * Callback when any of the MM:SS:ms spin buttons change.
+     *
+     * @param {Gtk.SpinButton} button Spin button.
+     */
+    onStartTimeChanged(button) {
+        this.#updateStartTime();
     }
 
     /**

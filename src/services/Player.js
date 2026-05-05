@@ -34,6 +34,8 @@ export class Player extends Service {
     #fadeTimeout = null;
     /** @type {?number} */
     #progressTimeout = null;
+    /** @type {?number} */
+    #pendingSeek = null;
     /** @type {number[]} */
     #connections = [];
 
@@ -138,6 +140,7 @@ export class Player extends Service {
 
         this.#bus.add_signal_watch();
         this.#bus.connect('message::eos', () => this.#onPlayEnded());
+        this.#bus.connect('message::async-done', () => this.#onAsyncDone());
         this.#bus.connect('message::warning', (bus, message) => console.warn(message.parse_warning()[0].toString()));
         this.#bus.connect('message::error', (bus, message) => console.error(message.parse_error().toString()));
 
@@ -191,7 +194,7 @@ export class Player extends Service {
         console.debug(`Playing Zap "${zap.name}".`);
 
         if (zap === this.zap && zap.playing) {
-            this.#playbin.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, 0);
+            this.#playbin.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, zap.startTime || 0);
             return;
         }
 
@@ -204,6 +207,9 @@ export class Player extends Service {
         this.zap.paused = false;
         this.#playbin.uri = zap.file.get_uri();
         this.#playbin.set_state(Gst.State.PLAYING);
+
+        if (zap.startTime > 0)
+            this.#pendingSeek = zap.startTime;
 
         this.#updateProgress();
         this.emit('play-started', zap.uuid);
@@ -222,6 +228,7 @@ export class Player extends Service {
         this.#playbin.set_state(Gst.State.READY);
         this.#fadeControlSource.unset_all();
         this.#volumeElement.volume = 1;
+        this.#pendingSeek = null;
 
         if (this.#fadeTimeout) {
             GLib.source_remove(this.#fadeTimeout);
@@ -324,9 +331,20 @@ export class Player extends Service {
      */
     #onPlayEnded() {
         if (this.zap.loop)
-            this.#playbin.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, 0);
+            this.#playbin.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, this.zap.startTime || 0);
         else
             this.stop();
+    }
+
+    /**
+     * Callback function when a state change completes.
+     * Used to perform a pending seek after the pipeline is ready.
+     */
+    #onAsyncDone() {
+        if (this.#pendingSeek !== null) {
+            this.#playbin.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, this.#pendingSeek);
+            this.#pendingSeek = null;
+        }
     }
 
 }

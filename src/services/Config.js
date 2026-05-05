@@ -33,7 +33,7 @@ export class Config extends Service {
         soundsDir.make_directory(null);
 
         const metadata = {
-            version: 4,
+            version: 5,
             settings: {
                 safetyMode: globalThis.settings.get_boolean('safety-mode'),
                 hideStopButton: globalThis.settings.get_boolean('hide-stop-button'),
@@ -83,6 +83,7 @@ export class Config extends Service {
                 filename,
                 color: zap.color.id,
                 loop: zap.loop,
+                startTime: zap.startTime || 0,
                 volume: zap.volume,
                 position: zap.position,
                 groupName: zap.groupName || '', // Include group assignment
@@ -166,7 +167,7 @@ export class Config extends Service {
             const [ok, contents] = metadataFile.load_contents(null);
             const metadata = JSON.parse(new TextDecoder().decode(contents));
 
-            const SUPPORTED_VERSIONS = [1, 2, 3, 4];
+            const SUPPORTED_VERSIONS = [1, 2, 3, 4, 5];
             if (metadata.version && !SUPPORTED_VERSIONS.includes(metadata.version))
                 throw new Error(`Unsupported export version: ${metadata.version}. Please update the app.`);
 
@@ -285,6 +286,7 @@ export class Config extends Service {
                             uri: soundFile.get_uri(),
                             color: Color.fromId(zapData.color),
                             loop: zapData.loop,
+                            startTime: zapData.startTime || 0,
                             volume: zapData.volume,
                             groupName: zapData.groupName || '',
                             hotkey: zapData.hotkey || '',
