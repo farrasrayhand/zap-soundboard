@@ -30,12 +30,12 @@ zap-item.uuid-$uuid menubutton.edit > button:active {
 
 zap-item.uuid-$uuid button.loop:checked,
 zap-item.uuid-$uuid menubutton.edit > button:checked {
-	background-color: alpha($zap_color, 0.8);
+	background-color: alpha($zap_color, 0.65);
 }
 
 zap-item.uuid-$uuid button.loop:checked:hover,
 zap-item.uuid-$uuid menubutton.edit > button:checked:hover {
-	background-color: alpha($zap_color, 0.85);
+	background-color: alpha($zap_color, 0.75);
 }
 
 zap-item.uuid-$uuid progress-bar {

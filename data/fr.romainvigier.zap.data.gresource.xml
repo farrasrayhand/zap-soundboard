@@ -30,7 +30,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
 		<file preprocess="xml-stripblanks" alias="icons/scalable/status/fr.romainvigier.zap-playing-symbolic.svg">icons/playing-symbolic.svg</file>
 		<file preprocess="xml-stripblanks" alias="icons/scalable/status/fr.romainvigier.zap-playing-symbolic-rtl.svg">icons/playing-symbolic-rtl.svg</file>
 		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-repeat-symbolic.svg">icons/repeat-symbolic.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-repeat-crossed-symbolic.svg">icons/repeat-crossed-symbolic.svg</file>
 		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-repeat-symbolic-rtl.svg">icons/repeat-symbolic-rtl.svg</file>
+		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-repeat-crossed-symbolic-rtl.svg">icons/repeat-crossed-symbolic-rtl.svg</file>
 		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-stop-symbolic.svg">icons/stop-symbolic.svg</file>
 		<file preprocess="xml-stripblanks" alias="icons/scalable/actions/fr.romainvigier.zap-trash-symbolic.svg">icons/trash-symbolic.svg</file>
 		<file preprocess="xml-stripblanks" alias="icons/scalable/status/fr.romainvigier.zap-volume-high-symbolic.svg">icons/volume-high-symbolic.svg</file>

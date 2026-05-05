@@ -29,6 +29,9 @@ export class ZapItem extends Gtk.Widget {
     /** @type {Gtk.Button} */
     #playButton;
 
+    /** @type {Gtk.ToggleButton} */
+    #loopButton;
+
     /** @type {?string} */
     #previousItemCssClass;
 
@@ -41,7 +44,7 @@ export class ZapItem extends Gtk.Widget {
                 zap: GObject.ParamSpec.object('zap', 'Zap', 'Zap', GObject.ParamFlags.READWRITE, Zap),
                 playing: GObject.ParamSpec.boolean('playing', 'Playing', 'Playing', GObject.ParamFlags.READWRITE, false),
             },
-            InternalChildren: ['stopButtonRevealer', 'stopButton', 'fadeOutButton', 'playButton', 'playImage'],
+            InternalChildren: ['stopButtonRevealer', 'stopButton', 'fadeOutButton', 'playButton', 'playImage', 'loopButton'],
         }, this);
     }
 
@@ -77,6 +80,10 @@ export class ZapItem extends Gtk.Widget {
         this.#fadeOutButton = this._fadeOutButton;
         this.#playButton = this._playButton;
         this.#playImage = this._playImage;
+        this.#loopButton = this._loopButton;
+
+        this.#syncLoopIcon();
+        this.#loopButton.connect('notify::active', () => this.#syncLoopIcon());
 
         this.#syncItemCssClass();
         this.#syncPlayingCssClass();
@@ -164,6 +171,15 @@ export class ZapItem extends Gtk.Widget {
         // Make fade out button take full height if stop is hidden
         this.#fadeOutButton.vexpand = hideStop;
         this.#fadeOutButton.valign = hideStop ? Gtk.Align.FILL : Gtk.Align.CENTER;
+    }
+
+    /**
+     * Synchronize the loop button icon based on its active state.
+     */
+    #syncLoopIcon() {
+        this.#loopButton.iconName = this.#loopButton.active
+            ? 'fr.romainvigier.zap-repeat-crossed-symbolic'
+            : 'fr.romainvigier.zap-repeat-symbolic';
     }
 
     /**

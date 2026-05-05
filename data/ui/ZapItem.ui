@@ -208,7 +208,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 					<object class="GtkBox">
 						<property name="orientation">vertical</property>
 						<child>
-							<object class="GtkToggleButton">
+							<object class="GtkToggleButton" id="loopButton">
 								<signal name="toggled" handler="onLoopButtonToggled"/>
 								<property name="tooltip-text" translatable="yes">Loop</property>
 								<property name="icon-name">fr.romainvigier.zap-repeat-symbolic</property>
