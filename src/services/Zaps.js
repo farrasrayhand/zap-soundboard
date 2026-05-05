@@ -440,6 +440,10 @@ export class Zaps extends Service {
     loop({ zap, loop }) {
         if (zap.loop === loop) return;
         this.#updateProperty(zap, 'loop', loop);
+        if (loop) {
+            if (zap.nextSoundUuid) this.changeNextSound({ zap, nextSoundUuid: '' });
+            if (zap.gap) this.changeGap({ zap, gap: 0 });
+        }
     }
 
     changeStartTime({ zap, startTime }) {
