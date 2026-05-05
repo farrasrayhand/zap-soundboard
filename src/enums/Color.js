@@ -23,8 +23,8 @@ export const Color = {
         id: 'gray',
         name: _('Gray'),
         rgba: {
-            light: new Gdk.RGBA({ red: 0.700, green: 0.700, blue: 0.700, alpha: 1 }),
-            dark: new Gdk.RGBA({ red: 0.400, green: 0.400, blue: 0.400, alpha: 1 }),
+            light: new Gdk.RGBA({ red: 0.750, green: 0.750, blue: 0.750, alpha: 1 }),
+            dark: new Gdk.RGBA({ red: 0.750, green: 0.750, blue: 0.750, alpha: 1 }),
         },
     },
     RED: {
@@ -32,7 +32,7 @@ export const Color = {
         name: _('Red'),
         rgba: {
             light: new Gdk.RGBA({ red: 0.929, green: 0.200, blue: 0.231, alpha: 1 }),
-            dark: new Gdk.RGBA({ red: 0.929, green: 0.200, blue: 0.231, alpha: 1 }),
+            dark: new Gdk.RGBA({ red: 1.000, green: 0.300, blue: 0.350, alpha: 1 }),
         },
     },
     ORANGE: {
@@ -40,7 +40,7 @@ export const Color = {
         name: _('Orange'),
         rgba: {
             light: new Gdk.RGBA({ red: 1.000, green: 0.639, blue: 0.282, alpha: 1 }),
-            dark: new Gdk.RGBA({ red: 1.000, green: 0.639, blue: 0.282, alpha: 1 }),
+            dark: new Gdk.RGBA({ red: 1.000, green: 0.700, blue: 0.300, alpha: 1 }),
         },
     },
     GREEN: {
@@ -48,7 +48,7 @@ export const Color = {
         name: _('Green'),
         rgba: {
             light: new Gdk.RGBA({ red: 0.341, green: 0.890, blue: 0.537, alpha: 1 }),
-            dark: new Gdk.RGBA({ red: 0.341, green: 0.890, blue: 0.537, alpha: 1 }),
+            dark: new Gdk.RGBA({ red: 0.350, green: 1.000, blue: 0.550, alpha: 1 }),
         },
     },
     BLUE: {
@@ -56,7 +56,7 @@ export const Color = {
         name: _('Blue'),
         rgba: {
             light: new Gdk.RGBA({ red: 0.208, green: 0.518, blue: 0.894, alpha: 1 }),
-            dark: new Gdk.RGBA({ red: 0.208, green: 0.518, blue: 0.894, alpha: 1 }),
+            dark: new Gdk.RGBA({ red: 0.250, green: 0.650, blue: 1.000, alpha: 1 }),
         },
     },
     PURPLE: {
@@ -64,7 +64,7 @@ export const Color = {
         name: _('Purple'),
         rgba: {
             light: new Gdk.RGBA({ red: 0.753, green: 0.380, blue: 0.796, alpha: 1 }),
-            dark: new Gdk.RGBA({ red: 0.753, green: 0.380, blue: 0.796, alpha: 1 }),
+            dark: new Gdk.RGBA({ red: 0.850, green: 0.450, blue: 0.900, alpha: 1 }),
         },
     },
     YELLOW: {
@@ -72,7 +72,7 @@ export const Color = {
         name: _('Yellow'),
         rgba: {
             light: new Gdk.RGBA({ red: 0.988, green: 0.914, blue: 0.310, alpha: 1 }),
-            dark: new Gdk.RGBA({ red: 0.988, green: 0.914, blue: 0.310, alpha: 1 }),
+            dark: new Gdk.RGBA({ red: 1.000, green: 0.950, blue: 0.350, alpha: 1 }),
         },
     },
     BROWN: {
@@ -80,7 +80,7 @@ export const Color = {
         name: _('Brown'),
         rgba: {
             light: new Gdk.RGBA({ red: 0.592, green: 0.353, blue: 0.169, alpha: 1 }),
-            dark: new Gdk.RGBA({ red: 0.592, green: 0.353, blue: 0.169, alpha: 1 }),
+            dark: new Gdk.RGBA({ red: 0.850, green: 0.550, blue: 0.250, alpha: 1 }),
         },
     },
     PINK: {
@@ -88,7 +88,7 @@ export const Color = {
         name: _('Pink'),
         rgba: {
             light: new Gdk.RGBA({ red: 1.000, green: 0.525, blue: 0.651, alpha: 1 }),
-            dark: new Gdk.RGBA({ red: 1.000, green: 0.525, blue: 0.651, alpha: 1 }),
+            dark: new Gdk.RGBA({ red: 1.000, green: 0.550, blue: 0.700, alpha: 1 }),
         },
     },
     TEAL: {
@@ -96,7 +96,7 @@ export const Color = {
         name: _('Teal'),
         rgba: {
             light: new Gdk.RGBA({ red: 0.200, green: 0.761, blue: 0.761, alpha: 1 }),
-            dark: new Gdk.RGBA({ red: 0.200, green: 0.761, blue: 0.761, alpha: 1 }),
+            dark: new Gdk.RGBA({ red: 0.200, green: 0.900, blue: 0.900, alpha: 1 }),
         },
     },
     LIME: {
@@ -104,7 +104,7 @@ export const Color = {
         name: _('Lime'),
         rgba: {
             light: new Gdk.RGBA({ red: 0.749, green: 0.914, blue: 0.200, alpha: 1 }),
-            dark: new Gdk.RGBA({ red: 0.749, green: 0.914, blue: 0.200, alpha: 1 }),
+            dark: new Gdk.RGBA({ red: 0.800, green: 0.950, blue: 0.250, alpha: 1 }),
         },
     },
     CYAN: {
@@ -112,7 +112,7 @@ export const Color = {
         name: _('Cyan'),
         rgba: {
             light: new Gdk.RGBA({ red: 0.310, green: 0.988, blue: 0.988, alpha: 1 }),
-            dark: new Gdk.RGBA({ red: 0.310, green: 0.988, blue: 0.988, alpha: 1 }),
+            dark: new Gdk.RGBA({ red: 0.300, green: 1.000, blue: 1.000, alpha: 1 }),
         },
     },
     INDIGO: {
@@ -120,7 +120,7 @@ export const Color = {
         name: _('Indigo'),
         rgba: {
             light: new Gdk.RGBA({ red: 0.294, green: 0.000, blue: 0.510, alpha: 1 }),
-            dark: new Gdk.RGBA({ red: 0.294, green: 0.000, blue: 0.510, alpha: 1 }),
+            dark: new Gdk.RGBA({ red: 0.600, green: 0.350, blue: 1.000, alpha: 1 }),
         },
     },
     MAGENTA: {
@@ -128,7 +128,7 @@ export const Color = {
         name: _('Magenta'),
         rgba: {
             light: new Gdk.RGBA({ red: 1.000, green: 0.000, blue: 1.000, alpha: 1 }),
-            dark: new Gdk.RGBA({ red: 1.000, green: 0.000, blue: 1.000, alpha: 1 }),
+            dark: new Gdk.RGBA({ red: 1.000, green: 0.250, blue: 1.000, alpha: 1 }),
         },
     },
     GOLD: {
@@ -136,7 +136,7 @@ export const Color = {
         name: _('Gold'),
         rgba: {
             light: new Gdk.RGBA({ red: 1.000, green: 0.843, blue: 0.000, alpha: 1 }),
-            dark: new Gdk.RGBA({ red: 1.000, green: 0.843, blue: 0.000, alpha: 1 }),
+            dark: new Gdk.RGBA({ red: 1.000, green: 0.880, blue: 0.100, alpha: 1 }),
         },
     },
     SKY: {
@@ -144,7 +144,7 @@ export const Color = {
         name: _('Sky'),
         rgba: {
             light: new Gdk.RGBA({ red: 0.529, green: 0.808, blue: 0.922, alpha: 1 }),
-            dark: new Gdk.RGBA({ red: 0.529, green: 0.808, blue: 0.922, alpha: 1 }),
+            dark: new Gdk.RGBA({ red: 0.550, green: 0.850, blue: 1.000, alpha: 1 }),
         },
     },
     MINT: {
@@ -152,7 +152,7 @@ export const Color = {
         name: _('Mint'),
         rgba: {
             light: new Gdk.RGBA({ red: 0.600, green: 1.000, blue: 0.600, alpha: 1 }),
-            dark: new Gdk.RGBA({ red: 0.600, green: 1.000, blue: 0.600, alpha: 1 }),
+            dark: new Gdk.RGBA({ red: 0.600, green: 1.000, blue: 0.650, alpha: 1 }),
         },
     },
 };

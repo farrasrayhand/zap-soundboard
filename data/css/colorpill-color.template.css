@@ -5,5 +5,5 @@
  */
 
 colorpill.$color_id > button {
-	background-color: $color_value;
+	background-color: alpha($color_value, $color_alpha);
 }

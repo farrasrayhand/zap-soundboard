@@ -58,7 +58,7 @@ export class ProgressBar extends Gtk.Widget {
         const direction = this.get_direction();
 
         const barColor = color.copy();
-        barColor.alpha = 0.25;
+        barColor.alpha = 0.75;
         const barWidth = Math.floor(allocation.width * this.progress);
         const barX = direction !== Gtk.TextDirection.RTL ? 0 : allocation.width - barWidth;
         const barRect = new Graphene.Rect({

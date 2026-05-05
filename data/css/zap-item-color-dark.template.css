@@ -9,7 +9,7 @@ zap-item.uuid-$uuid button.fadeout,
 zap-item.uuid-$uuid button.play,
 zap-item.uuid-$uuid button.loop,
 zap-item.uuid-$uuid menubutton.edit > button {
-	background-color: alpha($zap_color, 0.2);
+	background-color: alpha($zap_color, 0.65);
 }
 
 zap-item.uuid-$uuid button.stop:hover,
@@ -17,7 +17,7 @@ zap-item.uuid-$uuid button.fadeout:hover,
 zap-item.uuid-$uuid button.play:hover,
 zap-item.uuid-$uuid button.loop:hover,
 zap-item.uuid-$uuid menubutton.edit > button:hover {
-	background-color: alpha($zap_color, 0.3);
+	background-color: alpha($zap_color, 0.75);
 }
 
 zap-item.uuid-$uuid button.stop:active,
@@ -25,17 +25,17 @@ zap-item.uuid-$uuid button.fadeout:active,
 zap-item.uuid-$uuid button.play:active,
 zap-item.uuid-$uuid button.loop:active,
 zap-item.uuid-$uuid menubutton.edit > button:active {
-	background-color: alpha($zap_color, 0.15);
+	background-color: alpha($zap_color, 0.5);
 }
 
 zap-item.uuid-$uuid button.loop:checked,
 zap-item.uuid-$uuid menubutton.edit > button:checked {
-	background-color: alpha($zap_color, 0.4);
+	background-color: alpha($zap_color, 0.8);
 }
 
 zap-item.uuid-$uuid button.loop:checked:hover,
 zap-item.uuid-$uuid menubutton.edit > button:checked:hover {
-	background-color: alpha($zap_color, 0.5);
+	background-color: alpha($zap_color, 0.85);
 }
 
 zap-item.uuid-$uuid progress-bar {

@@ -223,7 +223,8 @@ export class Application extends Adw.Application {
             Color.forEach(color => {
                 const rule = colorTemplate
                     .replaceAll('$color_id', color.id)
-                    .replaceAll('$color_value', dark ? color.rgba.dark.to_string() : color.rgba.light.to_string());
+                    .replaceAll('$color_value', dark ? color.rgba.dark.to_string() : color.rgba.light.to_string())
+                    .replaceAll('$color_alpha', dark ? '0.65' : '0.3');
                 rules.push(rule);
             });
         }
