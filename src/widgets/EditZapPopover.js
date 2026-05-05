@@ -34,6 +34,10 @@ export class EditZapPopover extends Gtk.Popover {
     #nextSoundDropDown;
     /** @type {Gtk.SpinButton} */
     #gapSpin;
+    /** @type {Gtk.Box} */
+    #nextSoundBox;
+    /** @type {Gtk.Box} */
+    #delayBox;
     /** @type {number[]} */
     #nextSoundUuids = [];
     /** @type {?Zap} */
@@ -49,7 +53,7 @@ export class EditZapPopover extends Gtk.Popover {
                 zap: GObject.ParamSpec.object('zap', 'Zap', 'Zap', GObject.ParamFlags.READWRITE, Zap),
                 collections: GObject.ParamSpec.object('collections', 'Collections', 'Collections', GObject.ParamFlags.READWRITE, Gio.ListModel),
             },
-            InternalChildren: ['nameEntry', 'hotkeyEntry', 'groupDropDown', 'startMinSpin', 'startSecSpin', 'startMsSpin', 'nextSoundDropDown', 'gapSpin'],
+            InternalChildren: ['nameEntry', 'hotkeyEntry', 'groupDropDown', 'startMinSpin', 'startSecSpin', 'startMsSpin', 'nextSoundDropDown', 'gapSpin', 'nextSoundBox', 'delayBox'],
         }, this);
     }
 
@@ -74,6 +78,8 @@ export class EditZapPopover extends Gtk.Popover {
         this.#startMsSpin = this._startMsSpin;
         this.#nextSoundDropDown = this._nextSoundDropDown;
         this.#gapSpin = this._gapSpin;
+        this.#nextSoundBox = this._nextSoundBox;
+        this.#delayBox = this._delayBox;
 
         this.#setupHotkeyEntry(this.#hotkeyEntry);
     }
@@ -157,7 +163,11 @@ export class EditZapPopover extends Gtk.Popover {
         }
         this.#connectedZap = this.zap;
         this.#zapConnections.push(
-            this.#connectedZap.connect('notify::loop', () => this.#syncNextSoundSensitivity())
+            this.#connectedZap.connect('notify::loop', () => {
+                this.#refreshNextSoundDropdown();
+                this.#syncGapSpin();
+                this.#syncNextSoundSensitivity();
+            })
         );
 
         this.#nameEntry.text = this.zap.name;
@@ -359,9 +369,11 @@ export class EditZapPopover extends Gtk.Popover {
 
     #syncNextSoundSensitivity() {
         if (!this.zap) return;
-        const disabled = this.zap.loop;
-        this.#nextSoundDropDown.sensitive = !disabled;
-        this.#gapSpin.sensitive = !disabled && !!this.zap.nextSoundUuid;
+        const hidden = this.zap.loop;
+        this.#nextSoundBox.visible = !hidden;
+        this.#delayBox.visible = !hidden;
+        this.#nextSoundDropDown.sensitive = !hidden;
+        this.#gapSpin.sensitive = !hidden && !!this.zap.nextSoundUuid;
     }
 
     /**

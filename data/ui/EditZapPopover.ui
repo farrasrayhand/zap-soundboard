@@ -194,7 +194,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 					</object>
 				</child>
 				<child>
-					<object class="GtkBox">
+					<object class="GtkBox" id="nextSoundBox">
 						<child>
 							<object class="GtkImage">
 								<property name="icon-name">go-next-symbolic</property>
@@ -218,7 +218,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 					</object>
 				</child>
 				<child>
-					<object class="GtkBox">
+					<object class="GtkBox" id="delayBox">
 						<property name="margin-bottom">12</property>
 						<child>
 							<object class="GtkImage">
