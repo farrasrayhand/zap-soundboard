@@ -4,6 +4,7 @@
 
 import { state } from '../state.js';
 import { settings } from '../settings.js';
+import { player } from '../player.js';
 
 let dialog, safetyMode, hideStop, enablePause, fadeoutDuration, fadeoutValue;
 let stopHotkey, fadeoutHotkey, themeSelect, saveBtn, cancelBtn;
@@ -65,13 +66,19 @@ function open() {
 }
 
 function save() {
-    settings.set('safetyMode', safetyMode.checked);
+    const isSafetyEnabled = safetyMode.checked;
+    settings.set('safetyMode', isSafetyEnabled);
     settings.set('hideStopButton', hideStop.checked);
-    settings.set('enablePause', safetyMode.checked ? false : enablePause.checked);
+    settings.set('enablePause', isSafetyEnabled ? false : enablePause.checked);
     settings.set('fadeoutDuration', parseFloat(fadeoutDuration.value));
     settings.set('stopHotkey', stopHotkey.value);
     settings.set('fadeoutHotkey', fadeoutHotkey.value);
     settings.set('theme', themeSelect.value);
+
+    // If safety mode is turned on, stop everything to avoid "paused state" deadlock
+    if (isSafetyEnabled) {
+        player.stopAll();
+    }
 
     // Apply theme immediately
     const resolved = themeSelect.value === 'system'
