@@ -68,72 +68,67 @@ export class Player {
         const safetyMode = settings.getBoolean('safetyMode');
         const enablePause = settings.getBoolean('enablePause');
 
-        // Pause toggle: same zap, already playing
-        if (enablePause && this._active.has(zap.uuid) && !safetyMode) {
-            const pb = this._active.get(zap.uuid);
-            if (zap.playing && !zap.paused) {
-                // Pause
-                this._ctx.suspend();
-                zap.paused = true;
-                zap.playing = false;
-                this._stopProgressTracking();
-                state.emit('play:paused', { uuid: zap.uuid });
+        // 1. Handle clicking the SAME zap
+        if (this._active.has(zap.uuid)) {
+            if (enablePause && !safetyMode) {
+                // Individual pause/resume
+                if (!zap.paused) {
+                    this._pausePlayback(zap.uuid);
+                } else {
+                    this._resumePlayback(zap.uuid);
+                }
                 return;
-            } else if (zap.paused) {
-                // Resume
-                this._ctx.resume();
-                zap.paused = false;
-                zap.playing = true;
-                this._startProgressTracking();
-                state.emit('play:resumed', { uuid: zap.uuid });
-                return;
+            } else {
+                // Restart behavior: stop first (silently to avoid UI reset before immediate play)
+                this.stop(zap.uuid, true);
             }
         }
 
-        // Safety mode: block if something is playing
-        if (safetyMode && this._active.size > 0) {
-            state.emit('play:blocked', { message: 'Safety Mode: stop the current sound first.' });
-            return;
+        // 2. Handle clicking a DIFFERENT zap while something is playing
+        if (this._active.size > 0) {
+            if (safetyMode) {
+                // Safety Mode: Block playback (should be blocked by UI buttons too)
+                return;
+            } else {
+                // Safety Mode OFF: Stop current sounds before playing the new one
+                this.stopAll();
+            }
         }
 
-        // If same zap already playing, restart
-        if (this._active.has(zap.uuid)) {
-            this.stop(zap.uuid);
-        }
-
-        // Stop everything if safety mode
-        if (safetyMode)
-            this.stopAll();
-
-        state.emit('play:loading', { uuid: zap.uuid });
-
-        // Load / decode audio with persistent PCM cache
+        // 3. Optimized start: Skip loading event if buffer is ready
         let buffer = this._bufferCache.get(zap.fileId);
         if (!buffer) {
-            // Check persistent PCM cache
             const cached = await db.getDecodedAudio(zap.fileId);
             if (cached) {
                 buffer = this._reconstructBuffer(cached);
                 this._bufferCache.set(zap.fileId, buffer);
-            } else {
-                try {
-                    const blob = await db.getAudioBlob(zap.fileId);
-                    if (!blob) {
-                        console.warn(`Audio file not found for zap "${zap.name}"`);
-                        return;
-                    }
-                    const arrayBuffer = await blob.arrayBuffer();
-                    buffer = await this._ctx.decodeAudioData(arrayBuffer);
-                    db.storeDecodedAudio(zap.fileId, buffer);
-                    this._bufferCache.set(zap.fileId, buffer);
-                } catch (e) {
-                    console.error(`Failed to decode audio for "${zap.name}":`, e);
-                    state.emit('error', { message: `Could not play "${zap.name}" — audio format may not be supported.` });
-                    return;
-                }
             }
         }
 
+        if (buffer) {
+            this._startSource(zap, buffer);
+        } else {
+            state.emit('play:loading', { uuid: zap.uuid });
+            try {
+                const blob = await db.getAudioBlob(zap.fileId);
+                if (!blob) {
+                    console.warn(`Audio file not found for zap "${zap.name}"`);
+                    return;
+                }
+                const arrayBuffer = await blob.arrayBuffer();
+                buffer = await this._ctx.decodeAudioData(arrayBuffer);
+                db.storeDecodedAudio(zap.fileId, buffer);
+                this._bufferCache.set(zap.fileId, buffer);
+                this._startSource(zap, buffer);
+            } catch (e) {
+                console.error(`Failed to decode audio for "${zap.name}":`, e);
+                state.emit('error', { message: `Could not play "${zap.name}" — audio format may not be supported.` });
+                state.emit('play:stopped', { uuid: zap.uuid });
+            }
+        }
+    }
+
+    _startSource(zap, buffer) {
         const sourceNode = this._ctx.createBufferSource();
         sourceNode.buffer = buffer;
 
@@ -142,7 +137,6 @@ export class Player {
 
         const startTimeSeconds = zap.startTimeSeconds;
 
-        // Loop with start offset
         if (zap.loop) {
             sourceNode.loop = true;
             if (startTimeSeconds > 0) {
@@ -171,12 +165,70 @@ export class Player {
         state.emit('play:started', { uuid: zap.uuid });
     }
 
-    stop(uuid) {
+    _pausePlayback(uuid) {
+        const pb = this._active.get(uuid);
+        if (!pb || pb.zap.paused) return;
+
+        const elapsed = this._ctx.currentTime - pb.startWallTime;
+        pb.startOffset += elapsed;
+
+        try {
+            pb.sourceNode.onended = null;
+            pb.sourceNode.stop();
+        } catch (e) {}
+
+        pb.zap.playing = false;
+        pb.zap.paused = true;
+        state.emit('play:paused', { uuid });
+    }
+
+    _resumePlayback(uuid) {
+        const pb = this._active.get(uuid);
+        if (!pb || !pb.zap.paused) return;
+
+        const sourceNode = this._ctx.createBufferSource();
+        sourceNode.buffer = pb.buffer;
+        
+        const start = pb.zap.startTimeSeconds;
+        const dur = pb.buffer.duration;
+
+        if (pb.zap.loop) {
+            sourceNode.loop = true;
+            if (start > 0) {
+                sourceNode.loopStart = start;
+                sourceNode.loopEnd = dur;
+            }
+        }
+
+        sourceNode.connect(pb.gainNode);
+        sourceNode.onended = () => this._onEnded(uuid);
+
+        // Calculate correct resume offset considering loops
+        let offset;
+        if (pb.zap.loop) {
+            const loopLen = dur - start;
+            offset = loopLen > 0 ? (start + ((pb.startOffset - start) % loopLen)) : (pb.startOffset % dur);
+        } else {
+            offset = Math.min(pb.startOffset, dur);
+        }
+
+        sourceNode.start(0, offset);
+
+        pb.sourceNode = sourceNode;
+        pb.startWallTime = this._ctx.currentTime;
+        pb.zap.playing = true;
+        pb.zap.paused = false;
+
+        state.emit('play:resumed', { uuid });
+        this._startProgressTracking();
+    }
+
+    stop(uuid, silent = false) {
         const pb = this._active.get(uuid);
         if (!pb) return;
 
         // Clean up
-        try { pb.sourceNode.stop(); } catch (e) { /* already stopped */ }
+        try { pb.sourceNode.onended = null; pb.sourceNode.stop(); } catch (e) { /* already stopped */ }
         pb.sourceNode.disconnect();
         pb.gainNode.disconnect();
         this._clearFade(uuid);
@@ -193,7 +245,9 @@ export class Player {
         if (this._active.size === 0)
             this._stopProgressTracking();
 
-        state.emit('play:stopped', { uuid });
+        if (!silent) {
+            state.emit('play:stopped', { uuid });
+        }
     }
 
     stopAll() {
@@ -352,9 +406,19 @@ export class Player {
                     anyPlaying = true;
                     const elapsed = this._ctx.currentTime - pb.startWallTime + pb.startOffset;
                     const dur = pb.buffer.duration;
-                    pb.zap.positionTime = elapsed * NS_PER_S;
+                    const start = pb.zap.startTimeSeconds;
+                    
+                    let currentPos;
+                    if (pb.sourceNode.loop) {
+                        const loopLen = dur - start;
+                        currentPos = loopLen > 0 ? (start + ((elapsed - start) % loopLen)) : (elapsed % dur);
+                    } else {
+                        currentPos = Math.min(elapsed, dur);
+                    }
+                    
+                    pb.zap.positionTime = currentPos * NS_PER_S;
                     pb.zap.durationTime = dur * NS_PER_S;
-                    pb.zap.progress = dur > 0 ? elapsed / dur : 0;
+                    pb.zap.progress = dur > 0 ? currentPos / dur : 0;
                     state.emit('play:progress', {
                         uuid,
                         position: pb.zap.positionTime,
@@ -379,19 +443,31 @@ export class Player {
     }
 
     async preloadAll(zaps) {
+        console.log(`Player: Starting preload for ${zaps.length} sounds`);
         const total = zaps.length;
         if (total === 0) return;
         this._ensureContext();
         state.emit('preload:start', { total });
         let loaded = 0;
         for (const zap of zaps) {
-            if (!zap.fileId) { loaded++; continue; }
+            if (!zap.fileId) {
+                loaded++;
+                state.emit('preload:zap-done', { uuid: zap.uuid });
+                continue;
+            }
             if (!this._bufferCache.has(zap.fileId)) {
-                const cached = await db.hasDecodedAudio(zap.fileId);
-                if (!cached) {
+                const cached = await db.getDecodedAudio(zap.fileId);
+                if (cached) {
+                    const buffer = this._reconstructBuffer(cached);
+                    this._bufferCache.set(zap.fileId, buffer);
+                } else {
                     try {
                         const blob = await db.getAudioBlob(zap.fileId);
-                        if (!blob) { loaded++; continue; }
+                        if (!blob) {
+                            loaded++;
+                            state.emit('preload:zap-done', { uuid: zap.uuid });
+                            continue;
+                        }
                         const arrayBuffer = await blob.arrayBuffer();
                         const buffer = await this._ctx.decodeAudioData(arrayBuffer);
                         await db.storeDecodedAudio(zap.fileId, buffer);
@@ -402,10 +478,19 @@ export class Player {
                 }
             }
             loaded++;
+            state.emit('preload:zap-done', { uuid: zap.uuid });
             const pct = Math.round((loaded / total) * 100);
             state.emit('preload:progress', { loaded, total, pct, name: zap.name });
         }
         state.emit('preload:done', { total });
+    }
+
+    isPreloaded(zap) {
+        return this._bufferCache.has(zap.fileId);
+    }
+
+    isActive(uuid) {
+        return this._active.has(uuid);
     }
 
     // Called by app.js after zapsService is loaded

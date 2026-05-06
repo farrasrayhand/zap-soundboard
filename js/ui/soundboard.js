@@ -15,7 +15,7 @@ import { state } from '../state.js';
 import { settings } from '../settings.js';
 import { zapsService } from '../services/ZapsService.js';
 import { player } from '../player.js';
-import { createZapItem, updateZapItemState, initEditPopover } from './zapitem.js';
+import { createZapItem, updateZapItemState, initEditPopover, updateAllPlayButtons } from './zapitem.js';
 import { show as showToast } from './toast.js';
 
 let zapsContainer, emptyState, soundboard;
@@ -46,22 +46,15 @@ export function init() {
     state.on('groups:loaded', () => refresh());
     state.on('settings:changed', () => refresh());
 
-    // Playback state for zap cards
-    state.on('play:started', ({ uuid }) => updateZapItemState(uuid, 'playing', true));
-    state.on('play:stopped', ({ uuid }) => updateZapItemState(uuid, 'playing', false));
-    state.on('play:paused', ({ uuid }) => updateZapItemState(uuid, 'paused', true));
-    state.on('play:resumed', ({ uuid }) => updateZapItemState(uuid, 'paused', false));
-
     state.on('shortcut:add-group', () => addGroup());
     state.on('zap:reorder', ({ from, to }) => handleReorder(from, to));
 
     state.on('play:blocked', ({ message }) => showToast(message, 3000));
 
     state.on('preload:start', () => {
-        document.querySelectorAll('.zap-play-btn').forEach(btn => btn.disabled = true);
+        // Broad disabling removed to allow per-zap preloading state
     });
     state.on('preload:done', () => {
-        document.querySelectorAll('.zap-play-btn').forEach(btn => btn.disabled = false);
         updateSafetyBlock();
     });
     state.on('play:started', () => updateSafetyBlock());
@@ -70,11 +63,7 @@ export function init() {
 }
 
 function updateSafetyBlock() {
-    const safety = settings.getBoolean('safetyMode');
-    const playing = player.isPlaying;
-    document.querySelectorAll('.zap-play-btn').forEach(btn => {
-        btn.disabled = safety && playing;
-    });
+    updateAllPlayButtons();
 }
 
 function refresh() {

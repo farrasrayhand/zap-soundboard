@@ -53,12 +53,16 @@ async function init() {
         const preloadFill = document.getElementById('preload-fill');
         const preloadText = document.getElementById('preload-text');
         if (preloadBar && preloadFill && preloadText) {
-            state.on('preload:start', () => preloadBar.classList.remove('hidden'));
+            state.on('preload:start', () => {
+                console.log('App: Preload started');
+                preloadBar.classList.remove('hidden');
+            });
             state.on('preload:progress', ({ loaded, total, pct, name }) => {
                 preloadFill.style.width = pct + '%';
                 preloadText.textContent = `${name}... ${loaded}/${total} (${pct}%)`;
             });
             state.on('preload:done', () => {
+                console.log('App: Preload finished');
                 preloadFill.style.width = '100%';
                 preloadText.textContent = 'Ready!';
                 setTimeout(() => preloadBar.classList.add('hidden'), 800);

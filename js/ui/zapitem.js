@@ -185,6 +185,26 @@ export function createZapItem(zap) {
 
     playBtn.appendChild(badges);
 
+    // Initial state based on player
+    const isPlaying = player.isActive(zap.uuid) && zap.playing && !zap.paused;
+    const isPaused = player.isActive(zap.uuid) && zap.paused;
+    const isPreloaded = player.isPreloaded(zap);
+
+    const canPause = settings.getBoolean('enablePause') && !settings.getBoolean('safetyMode');
+
+    if (isPlaying) {
+        el.classList.add('playing');
+        playIcon.innerHTML = canPause ? ICONS.pause : ICONS.play;
+        leftBox.classList.add('visible');
+    } else if (isPaused) {
+        el.classList.add('paused');
+        playIcon.innerHTML = ICONS.play;
+    }
+
+    if (!isPreloaded) {
+        playBtn.disabled = true;
+    }
+
     playBtn.addEventListener('click', () => player.play(zap));
     row.appendChild(playBtn);
 
@@ -257,82 +277,151 @@ export function createZapItem(zap) {
             state.emit('zap:reorder', { from: draggedUuid, to: zap.uuid });
     });
 
-    // ── Progress listener ──
-    state.on('play:progress', ({ uuid, progress }) => {
-        if (uuid === zap.uuid)
-            progressFill.style.width = (progress * 100) + '%';
-    });
+    return el;
+}
 
-    state.on('play:loading', ({ uuid }) => {
-        if (uuid === zap.uuid) {
-            playBtn.disabled = true;
-            playIcon.innerHTML = '<span class="spinner"></span>';
-        }
-    });
+// ── Global listeners for playback state (outside createZapItem to avoid leaks) ──
 
-    state.on('play:progress', ({ uuid, position, duration }) => {
-        if (uuid === zap.uuid) {
+state.on('play:progress', ({ uuid, progress, position, duration }) => {
+    const el = itemElements.get(uuid);
+    if (el) {
+        const progressFill = el.querySelector('.progress-fill');
+        if (progressFill) progressFill.style.width = (progress * 100) + '%';
+        
+        const timestamp = el.querySelector('.zap-badge.zap-timestamp');
+        if (timestamp) {
             timestamp.style.display = 'inline';
             timestamp.textContent = formatTime(position) + ' / ' + formatTime(duration);
         }
-    });
+    }
+});
 
-    state.on('play:gap-countdown', ({ fromUuid, remaining }) => {
-        if (fromUuid === zap.uuid) {
+state.on('play:gap-countdown', ({ fromUuid, remaining }) => {
+    const el = itemElements.get(fromUuid);
+    if (el) {
+        const timestamp = el.querySelector('.zap-badge.zap-timestamp');
+        if (timestamp) {
             timestamp.style.display = 'inline';
             timestamp.textContent = formatTime(remaining) + ' →';
         }
-    });
+    }
+});
 
-    state.on('play:stopped', ({ uuid }) => {
-        if (uuid === zap.uuid || !uuid) {
-            progressFill.style.width = '0%';
-            timestamp.style.display = 'none';
-            el.classList.remove('playing', 'paused');
-            playBtn.disabled = false;
-            playIcon.innerHTML = ICONS.play;
+export function updateAllPlayButtons() {
+    const safety = settings.getBoolean('safetyMode');
+    const isPlaying = player.isPlaying;
+    
+    for (const [uuid, el] of itemElements) {
+        const zap = zapsService.find({ uuid });
+        const btn = el.querySelector('.zap-play-btn');
+        if (!btn || !zap) continue;
+
+        const isPreloaded = player.isPreloaded(zap);
+        if (!isPreloaded) {
+            btn.disabled = true;
+        } else if (safety && isPlaying) {
+            btn.disabled = true;
+        } else {
+            btn.disabled = false;
         }
-    });
+    }
+}
 
-    state.on('zap:updated', ({ uuid, property }) => {
-        if (uuid !== zap.uuid) return;
-        if (['loop', 'color', 'nextSoundUuid', 'gap'].includes(property)) {
-            const updatedZap = zapsService.find({ uuid });
-            if (updatedZap) {
-                const c = Color.fromId(updatedZap.color);
-                const dark = document.documentElement.dataset.theme === 'dark';
-                const r = dark ? c.rgba.dark : c.rgba.light;
-                row.style.backgroundColor = rgbToRgba(r, dark ? 0.25 : 0.18);
+state.on('play:started', ({ uuid }) => {
+    updateZapItemState(uuid, 'playing', true);
+    updateAllPlayButtons();
+});
+state.on('play:stopped', ({ uuid }) => {
+    updateZapItemState(uuid, 'playing', false);
+    updateAllPlayButtons();
+});
+state.on('play:paused', ({ uuid }) => {
+    updateZapItemState(uuid, 'paused', true);
+    updateAllPlayButtons();
+});
+state.on('play:resumed', ({ uuid }) => {
+    updateZapItemState(uuid, 'paused', false);
+    updateAllPlayButtons();
+});
+
+state.on('play:loading', ({ uuid }) => {
+    const el = itemElements.get(uuid);
+    if (el) {
+        const playBtn = el.querySelector('.zap-play-btn');
+        const playIcon = el.querySelector('.zap-play-icon');
+        if (playBtn) playBtn.disabled = true;
+        if (playIcon) playIcon.innerHTML = '<span class="spinner"></span>';
+    }
+});
+
+state.on('preload:zap-done', ({ uuid }) => {
+    updateAllPlayButtons();
+});
+
+state.on('zap:updated', ({ uuid, property }) => {
+    const el = itemElements.get(uuid);
+    if (!el) return;
+    if (['loop', 'color', 'nextSoundUuid', 'gap'].includes(property)) {
+        const updatedZap = zapsService.find({ uuid });
+        if (updatedZap) {
+            const c = Color.fromId(updatedZap.color);
+            const dark = document.documentElement.dataset.theme === 'dark';
+            const r = dark ? c.rgba.dark : c.rgba.light;
+            const row = el.querySelector('.zap-row');
+            const progressFill = el.querySelector('.progress-fill');
+            const loopBtn = el.querySelector('.zap-loop-btn');
+            if (row) row.style.backgroundColor = rgbToRgba(r, dark ? 0.25 : 0.18);
+            if (progressFill) {
                 progressFill.style.backgroundColor = r;
+            }
+            if (loopBtn) {
                 loopBtn.dataset.loop = updatedZap.loop ? 'on' : 'off';
                 loopBtn.innerHTML = updatedZap.loop ? ICONS.repeat_crossed : ICONS.repeat;
             }
         }
-        if (property === 'nextSoundUuid' || property === 'gap') {
-            const badge = el.querySelector('.zap-next-badge');
-            if (badge) badge.remove();
-        }
-    });
-
-    return el;
-}
+    }
+    if (property === 'nextSoundUuid' || property === 'gap') {
+        const badge = el.querySelector('.zap-badge.zap-next-badge');
+        if (badge) badge.remove();
+    }
+});
 
 export function updateZapItemState(uuid, stateType, value) {
     const el = itemElements.get(uuid);
     if (!el) return;
 
+    const icon = el.querySelector('.zap-play-icon');
+    const left = el.querySelector('.zap-left');
+    const canPause = settings.getBoolean('enablePause') && !settings.getBoolean('safetyMode');
+
     if (stateType === 'playing') {
         el.classList.toggle('playing', value);
-        const icon = el.querySelector('.zap-play-icon');
-        if (icon) icon.innerHTML = value ? ICONS.pause : ICONS.play;
-        const btn = el.querySelector('.zap-play-btn');
-        if (btn) btn.disabled = false;
-        // Toggle left controls visibility
-        const left = el.querySelector('.zap-left');
-        if (left) left.classList.toggle('visible', value);
+        if (value) {
+            el.classList.remove('paused');
+            if (icon) icon.innerHTML = canPause ? ICONS.pause : ICONS.play;
+            if (left) left.classList.add('visible');
+        } else {
+            if (icon) icon.innerHTML = ICONS.play;
+            if (left) left.classList.remove('visible');
+            const progressFill = el.querySelector('.progress-fill');
+            if (progressFill) progressFill.style.width = '0%';
+            const timestamp = el.querySelector('.zap-badge.zap-timestamp');
+            if (timestamp) timestamp.style.display = 'none';
+        }
     }
+    
     if (stateType === 'paused') {
         el.classList.toggle('paused', value);
+        if (value) {
+            el.classList.remove('playing');
+            if (icon) icon.innerHTML = ICONS.play;
+            if (left) left.classList.remove('visible');
+        } else {
+            // Resumed
+            el.classList.add('playing');
+            if (icon) icon.innerHTML = canPause ? ICONS.pause : ICONS.play;
+            if (left) left.classList.add('visible');
+        }
     }
 }
 
