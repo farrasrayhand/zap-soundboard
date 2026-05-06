@@ -1,0 +1,42 @@
+:root {
+    /* Adwaita-inspired colors */
+    --bg: #f6f5f4;
+    --bg-secondary: #ffffff;
+    --fg: #241f31;
+    --fg-dim: #5e5c64;
+    --border: #deddda;
+    --accent: #3584e4;
+    --accent-hover: #1c71d8;
+    --destructive: #c01c28;
+    --destructive-hover: #a51d2d;
+
+    /* Spacing */
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-xs: 4px;
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 12px;
+    --space-lg: 18px;
+    --space-xl: 24px;
+
+    /* Typography */
+    --font: system-ui, -apple-system, sans-serif;
+    --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+    --text-sm: 0.8125rem;
+    --text-md: 0.875rem;
+    --text-lg: 1rem;
+    --text-xl: 1.25rem;
+
+    /* Shadows */
+    --shadow-popover: 0 2px 12px rgba(0,0,0,0.12);
+    --shadow-dialog: 0 4px 24px rgba(0,0,0,0.18);
+
+    /* Zap item */
+    --zap-item-size: 120px;
+    --zap-item-radius: 18px;
+
+    /* Transitions */
+    --transition-fast: 100ms ease;
+    --transition-normal: 200ms ease;
+}
