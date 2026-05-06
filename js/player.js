@@ -261,6 +261,18 @@ export class Player {
         if (!silent) {
             state.emit('play:stopped', { uuid });
         }
+
+        // Memory Management: In 'Battery Saver' mode, clear large sounds from RAM after they stop.
+        if (settings.get('performanceMode') === 'low' && fileId) {
+            const buffer = this._bufferCache.get(fileId);
+            if (buffer) {
+                const pcmSize = buffer.numberOfChannels * buffer.length * 4;
+                if (pcmSize > 10 * 1024 * 1024) { // > 10MB
+                    console.debug(`Player (Saver): Clearing large buffer for "${pb.zap.name}" from RAM after playback.`);
+                    this._bufferCache.delete(fileId);
+                }
+            }
+        }
     }
 
     stopAll() {
@@ -508,13 +520,21 @@ export class Player {
             return;
         }
 
+        const isLowPerf = settings.get('performanceMode') === 'low';
         const cached = await db.getDecodedAudio(zap.fileId);
         
         if (cached) {
             try {
                 const buffer = this._reconstructBuffer(cached);
-                // ALWAYS put in RAM for instant playback
-                this._bufferCache.set(zap.fileId, buffer);
+                const pcmSize = buffer.numberOfChannels * buffer.length * 4;
+
+                // Smart Preload: In Battery Saver mode, don't keep large sounds (>10MB) in RAM during startup
+                if (isLowPerf && pcmSize > 10 * 1024 * 1024) {
+                    console.debug(`Preload (Saver): "${zap.name}" verified in DB, skipping RAM.`);
+                } else {
+                    this._bufferCache.set(zap.fileId, buffer);
+                }
+                
                 this._readyFiles.add(zap.fileId);
                 state.emit('preload:zap-done', { uuid: zap.uuid });
                 return;
@@ -533,9 +553,15 @@ export class Player {
             }
             const arrayBuffer = await blob.arrayBuffer();
             const buffer = await this._ctx.decodeAudioData(arrayBuffer);
+            const pcmSize = buffer.numberOfChannels * buffer.length * 4;
             
-            // Store in RAM first for INSTANT playback
-            this._bufferCache.set(zap.fileId, buffer);
+            // Smart RAM decision
+            if (isLowPerf && pcmSize > 10 * 1024 * 1024) {
+                console.debug(`Preload (Saver): "${zap.name}" decoded and cached to DB, discarding from RAM.`);
+            } else {
+                this._bufferCache.set(zap.fileId, buffer);
+            }
+            
             this._readyFiles.add(zap.fileId);
             
             // Store in DB chunks for Firefox stability
