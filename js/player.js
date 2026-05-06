@@ -448,64 +448,86 @@ export class Player {
     }
 
     async preloadAll(zaps) {
-        console.log(`Player: Starting preload for ${zaps.length} sounds`);
+        if (zaps.length === 0) return;
+        console.log(`Player: Starting parallel preload for ${zaps.length} sounds`);
         const total = zaps.length;
-        if (total === 0) return;
         this._ensureContext();
+        
+        if (this._ctx.state === 'suspended') {
+            this._ctx.resume().catch(() => {});
+        }
+
         state.emit('preload:start', { total });
         let loaded = 0;
-        for (const zap of zaps) {
-            if (!zap.fileId) {
+
+        // Process in small batches to avoid overwhelming the CPU/Memory
+        const BATCH_SIZE = 4;
+        for (let i = 0; i < zaps.length; i += BATCH_SIZE) {
+            const batch = zaps.slice(i, i + BATCH_SIZE);
+            await Promise.all(batch.map(async (zap) => {
+                await this._preloadOne(zap);
                 loaded++;
-                state.emit('preload:zap-done', { uuid: zap.uuid });
-                continue;
-            }
-            if (!this._bufferCache.has(zap.fileId)) {
-                const cached = await db.getDecodedAudio(zap.fileId);
-                if (cached) {
-                    try {
-                        const buffer = this._reconstructBuffer(cached);
-                        this._bufferCache.set(zap.fileId, buffer);
-                    } catch (reconstructError) {
-                        console.error(`Failed to reconstruct buffer from cache for "${zap.name}":`, reconstructError);
-                        await db.deleteDecodedAudio(zap.fileId); // Clear corrupted cache
-                    }
-                }
-                
-                // If not in cache or reconstruction failed, decode from original blob
-                if (!this._bufferCache.has(zap.fileId)) {
-                    try {
-                        const blob = await db.getAudioBlob(zap.fileId);
-                        if (!blob) {
-                            console.warn(`Original audio blob not found for "${zap.name}" (ID: ${zap.fileId})`);
-                            loaded++;
-                            state.emit('preload:zap-done', { uuid: zap.uuid });
-                            continue;
-                        }
-                        const arrayBuffer = await blob.arrayBuffer();
-                        const buffer = await this._ctx.decodeAudioData(arrayBuffer);
-                        
-                        // Set in memory cache IMMEDIATELY so it's not "locked"
-                        this._bufferCache.set(zap.fileId, buffer);
-                        
-                        // Try to store in persistent cache, but don't fail if it fails (e.g. QuotaExceededError)
-                        try {
-                            await db.storeDecodedAudio(zap.fileId, buffer);
-                        } catch (dbError) {
-                            console.warn(`Persistent cache storage failed for "${zap.name}" (likely quota exceeded):`, dbError);
-                        }
-                    } catch (e) {
-                        console.error(`Preload failed for "${zap.name}":`, e);
-                        state.emit('error', { message: `Could not preload "${zap.name}".` });
-                    }
-                }
-            }
-            loaded++;
-            state.emit('preload:zap-done', { uuid: zap.uuid });
-            const pct = Math.round((loaded / total) * 100);
-            state.emit('preload:progress', { loaded, total, pct, name: zap.name });
+                const pct = Math.round((loaded / total) * 100);
+                state.emit('preload:progress', { loaded, total, pct, name: zap.name });
+            }));
         }
+        
         state.emit('preload:done', { total });
+    }
+
+    async _preloadOne(zap) {
+        if (!zap.fileId) {
+            state.emit('preload:zap-done', { uuid: zap.uuid });
+            return;
+        }
+
+        if (this._bufferCache.has(zap.fileId)) {
+            state.emit('preload:zap-done', { uuid: zap.uuid });
+            return;
+        }
+
+        const cached = await db.getDecodedAudio(zap.fileId);
+        if (cached) {
+            try {
+                const buffer = this._reconstructBuffer(cached);
+                this._bufferCache.set(zap.fileId, buffer);
+                state.emit('preload:zap-done', { uuid: zap.uuid });
+                return;
+            } catch (reconstructError) {
+                console.warn(`Cache corrupt for "${zap.name}", re-decoding...`);
+                await db.deleteDecodedAudio(zap.fileId);
+            }
+        }
+
+        // Cache miss or corrupt, decode from scratch
+        try {
+            const blob = await db.getAudioBlob(zap.fileId);
+            if (!blob) {
+                state.emit('preload:zap-done', { uuid: zap.uuid });
+                return;
+            }
+            const arrayBuffer = await blob.arrayBuffer();
+            const buffer = await this._ctx.decodeAudioData(arrayBuffer);
+            
+            this._bufferCache.set(zap.fileId, buffer);
+            state.emit('preload:zap-done', { uuid: zap.uuid });
+
+            // Only attempt persistent cache if it's not too large (e.g. < 20MB in PCM)
+            // PCM size = channels * length * 4 bytes
+            const pcmSize = buffer.numberOfChannels * buffer.length * 4;
+            if (pcmSize < 20 * 1024 * 1024) {
+                try {
+                    await db.storeDecodedAudio(zap.fileId, buffer);
+                } catch (dbError) {
+                    // Quietly ignore quota errors, memory cache is enough
+                }
+            } else {
+                console.debug(`Preload: "${zap.name}" is too large for persistent cache (${(pcmSize/1e6).toFixed(1)}MB), memory only.`);
+            }
+        } catch (e) {
+            console.error(`Preload failed for "${zap.name}":`, e);
+            state.emit('preload:zap-done', { uuid: zap.uuid }); // Still emit done so UI doesn't hang
+        }
     }
 
     isPreloaded(zap) {

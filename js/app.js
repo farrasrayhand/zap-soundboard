@@ -37,9 +37,7 @@ async function init() {
         const collection = lastUuid
             ? collectionsService.find({ uuid: lastUuid })
             : collectionsService.items[0];
-        if (collection)
-            state.emit('collection:selected', { uuid: collection.uuid });
-
+        
         player.setFindZap(uuid => zapsService.find({ uuid }));
 
         await seedDefaultSounds();
@@ -54,7 +52,6 @@ async function init() {
         const preloadText = document.getElementById('preload-text');
         if (preloadBar && preloadFill && preloadText) {
             state.on('preload:start', () => {
-                console.log('App: Preload started');
                 preloadBar.classList.remove('hidden');
             });
             state.on('preload:progress', ({ loaded, total, pct, name }) => {
@@ -62,14 +59,24 @@ async function init() {
                 preloadText.textContent = `${name}... ${loaded}/${total} (${pct}%)`;
             });
             state.on('preload:done', () => {
-                console.log('App: Preload finished');
                 preloadFill.style.width = '100%';
                 preloadText.textContent = 'Ready!';
                 setTimeout(() => preloadBar.classList.add('hidden'), 800);
             });
         }
-        if (zapsService.count > 0)
-            player.preloadAll(zapsService.zaps);
+
+        // Listener for preloading when a collection is selected
+        state.on('collection:selected', ({ uuid }) => {
+            const toPreload = zapsService.zaps.filter(z => z.collectionUuid === uuid);
+            if (toPreload.length > 0) {
+                player.preloadAll(toPreload);
+            }
+        });
+
+        // Trigger initial selection and preload
+        if (collection) {
+            state.emit('collection:selected', { uuid: collection.uuid });
+        }
 
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
             if (settings.get('theme') === 'system') applyTheme();
