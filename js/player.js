@@ -251,8 +251,13 @@ export class Player {
     }
 
     stopAll() {
-        for (const uuid of this._active.keys())
+        const uuids = Array.from(this._active.keys());
+        for (const uuid of uuids) {
             this.stop(uuid);
+        }
+        // Force clear in case of edge cases
+        this._active.clear();
+        this._stopProgressTracking();
     }
 
     fadeOut(uuid = null, duration = null) {

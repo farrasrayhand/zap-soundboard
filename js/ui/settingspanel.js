@@ -67,18 +67,21 @@ function open() {
 
 function save() {
     const isSafetyEnabled = safetyMode.checked;
+    const isPauseEnabled = enablePause.checked;
+
+    // Stop everything if we are changing critical playback modes
+    if (isSafetyEnabled !== settings.getBoolean('safetyMode') || 
+        isPauseEnabled !== settings.getBoolean('enablePause')) {
+        player.stopAll();
+    }
+
     settings.set('safetyMode', isSafetyEnabled);
     settings.set('hideStopButton', hideStop.checked);
-    settings.set('enablePause', isSafetyEnabled ? false : enablePause.checked);
+    settings.set('enablePause', isSafetyEnabled ? false : isPauseEnabled);
     settings.set('fadeoutDuration', parseFloat(fadeoutDuration.value));
     settings.set('stopHotkey', stopHotkey.value);
     settings.set('fadeoutHotkey', fadeoutHotkey.value);
     settings.set('theme', themeSelect.value);
-
-    // If safety mode is turned on, stop everything to avoid "paused state" deadlock
-    if (isSafetyEnabled) {
-        player.stopAll();
-    }
 
     // Apply theme immediately
     const resolved = themeSelect.value === 'system'
