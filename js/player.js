@@ -463,22 +463,40 @@ export class Player {
             if (!this._bufferCache.has(zap.fileId)) {
                 const cached = await db.getDecodedAudio(zap.fileId);
                 if (cached) {
-                    const buffer = this._reconstructBuffer(cached);
-                    this._bufferCache.set(zap.fileId, buffer);
-                } else {
+                    try {
+                        const buffer = this._reconstructBuffer(cached);
+                        this._bufferCache.set(zap.fileId, buffer);
+                    } catch (reconstructError) {
+                        console.error(`Failed to reconstruct buffer from cache for "${zap.name}":`, reconstructError);
+                        await db.deleteDecodedAudio(zap.fileId); // Clear corrupted cache
+                    }
+                }
+                
+                // If not in cache or reconstruction failed, decode from original blob
+                if (!this._bufferCache.has(zap.fileId)) {
                     try {
                         const blob = await db.getAudioBlob(zap.fileId);
                         if (!blob) {
+                            console.warn(`Original audio blob not found for "${zap.name}" (ID: ${zap.fileId})`);
                             loaded++;
                             state.emit('preload:zap-done', { uuid: zap.uuid });
                             continue;
                         }
                         const arrayBuffer = await blob.arrayBuffer();
                         const buffer = await this._ctx.decodeAudioData(arrayBuffer);
-                        await db.storeDecodedAudio(zap.fileId, buffer);
+                        
+                        // Set in memory cache IMMEDIATELY so it's not "locked"
                         this._bufferCache.set(zap.fileId, buffer);
+                        
+                        // Try to store in persistent cache, but don't fail if it fails (e.g. QuotaExceededError)
+                        try {
+                            await db.storeDecodedAudio(zap.fileId, buffer);
+                        } catch (dbError) {
+                            console.warn(`Persistent cache storage failed for "${zap.name}" (likely quota exceeded):`, dbError);
+                        }
                     } catch (e) {
-                        console.warn(`Preload failed for "${zap.name}":`, e);
+                        console.error(`Preload failed for "${zap.name}":`, e);
+                        state.emit('error', { message: `Could not preload "${zap.name}".` });
                     }
                 }
             }
