@@ -167,6 +167,7 @@ export async function createZapFile(collections, groups, zaps, settingsObj, audi
             fadeoutDuration: settingsObj.fadeoutDuration ?? 1.0,
             stopHotkey: settingsObj.stopHotkey ?? '',
             fadeoutHotkey: settingsObj.fadeoutHotkey ?? '',
+            performanceMode: settingsObj.performanceMode ?? 'high',
         },
         collections: collections.map(c => ({ uuid: c.uuid, name: c.name })),
         groups: groups.map(g => ({ uuid: g.uuid, name: g.name, collectionUuid: g.collectionUuid, position: g.position })),

@@ -130,6 +130,7 @@ async function doImport(replace) {
             if (s.fadeoutDuration !== undefined) settings.set('fadeoutDuration', s.fadeoutDuration);
             if (s.stopHotkey !== undefined) settings.set('stopHotkey', s.stopHotkey);
             if (s.fadeoutHotkey !== undefined) settings.set('fadeoutHotkey', s.fadeoutHotkey);
+            if (s.performanceMode !== undefined) settings.set('performanceMode', s.performanceMode);
         }
 
         // Build name->collection lookup for existing collections

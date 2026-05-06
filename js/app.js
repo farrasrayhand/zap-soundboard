@@ -78,8 +78,14 @@ async function init() {
             state.emit('collection:selected', { uuid: collection.uuid });
         }
 
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-            if (settings.get('theme') === 'system') applyTheme();
+        state.on('settings:changed', () => {
+            applyTheme();
+            // Re-preload current collection to apply performance mode changes (RAM vs DB)
+            const currentUuid = document.querySelector('#soundboard')?.dataset?.selectedCollection;
+            if (currentUuid) {
+                const toPreload = zapsService.zaps.filter(z => z.collectionUuid === currentUuid);
+                player.preloadAll(toPreload);
+            }
         });
 
         state.on('hotkey:stop', () => player.stopAll());

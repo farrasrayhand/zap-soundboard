@@ -316,8 +316,8 @@ export function updateAllPlayButtons() {
         const btn = el.querySelector('.zap-play-btn');
         if (!btn || !zap) continue;
 
-        const isPreloaded = player.isPreloaded(zap);
-        if (!isPreloaded) {
+        const isReady = player.isReady(zap);
+        if (!isReady) {
             btn.disabled = true;
         } else if (safety && isPlaying) {
             btn.disabled = true;

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 const DB_NAME = 'zap';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export class Database {
     constructor() {
@@ -34,6 +34,12 @@ export class Database {
 
                 if (oldVersion < 2) {
                     db.createObjectStore('decodedAudio', { keyPath: 'fileId' });
+                }
+
+                if (oldVersion < 3) {
+                    const chunks = db.createObjectStore('decodedChunks', { keyPath: 'id' });
+                    chunks.createIndex('by-file', 'fileId', { unique: false });
+                    chunks.createIndex('by-file-channel', ['fileId', 'channel'], { unique: false });
                 }
             };
             request.onsuccess = (event) => {
@@ -186,24 +192,82 @@ export class Database {
 
     // Decoded audio PCM cache (persistent)
     async storeDecodedAudio(fileId, audioBuffer) {
+        const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB per chunk for stability
         const channels = [];
-        for (let c = 0; c < audioBuffer.numberOfChannels; c++)
+        for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
             channels.push(audioBuffer.getChannelData(c));
-        await this.put('decodedAudio', {
+        }
+
+        // We store metadata in 'decodedAudio' and actual PCM data in a new 'decodedChunks' store
+        const metadata = {
             fileId,
             sampleRate: audioBuffer.sampleRate,
             numberOfChannels: audioBuffer.numberOfChannels,
             length: audioBuffer.length,
-            channels,
-        });
+            timestamp: Date.now()
+        };
+
+        await this.put('decodedAudio', metadata);
+
+        // Clear old chunks if any
+        await this._deleteChunks(fileId);
+
+        // Store each channel's data in chunks
+        for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+            const data = channels[c];
+            let chunkIdx = 0;
+            for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+                const chunk = data.slice(i, i + CHUNK_SIZE);
+                await this.put('decodedChunks', {
+                    id: `${fileId}_${c}_${chunkIdx}`,
+                    fileId,
+                    channel: c,
+                    index: chunkIdx,
+                    data: chunk
+                });
+                chunkIdx++;
+            }
+        }
     }
 
     async getDecodedAudio(fileId) {
-        return this.get('decodedAudio', fileId);
+        const metadata = await this.get('decodedAudio', fileId);
+        if (!metadata) return null;
+
+        try {
+            // Fetch ALL chunks for this file in one query
+            const allChunks = await this.getByIndex('decodedChunks', 'by-file', fileId);
+            
+            const channels = [];
+            for (let c = 0; c < metadata.numberOfChannels; c++) {
+                const channelChunks = allChunks.filter(chunk => chunk.channel === c);
+                channelChunks.sort((a, b) => a.index - b.index);
+                
+                const fullChannel = new Float32Array(metadata.length);
+                let offset = 0;
+                for (const chunk of channelChunks) {
+                    fullChannel.set(chunk.data, offset);
+                    offset += chunk.data.length;
+                }
+                channels.push(fullChannel);
+            }
+            return { ...metadata, channels };
+        } catch (e) {
+            console.error('Failed to reconstruct chunked audio:', e);
+            return null;
+        }
     }
 
     async deleteDecodedAudio(fileId) {
-        return this.delete('decodedAudio', fileId);
+        await this.delete('decodedAudio', fileId);
+        await this._deleteChunks(fileId);
+    }
+
+    async _deleteChunks(fileId) {
+        const chunks = await this.getByIndex('decodedChunks', 'by-file', fileId);
+        if (chunks.length > 0) {
+            await this.batchDelete('decodedChunks', chunks.map(c => c.id));
+        }
     }
 
     async hasDecodedAudio(fileId) {

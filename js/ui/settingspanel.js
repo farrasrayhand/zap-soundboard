@@ -7,7 +7,7 @@ import { settings } from '../settings.js';
 import { player } from '../player.js';
 
 let dialog, safetyMode, hideStop, enablePause, fadeoutDuration, fadeoutValue;
-let stopHotkey, fadeoutHotkey, themeSelect, saveBtn, cancelBtn;
+let stopHotkey, fadeoutHotkey, themeSelect, perfSelect, saveBtn, cancelBtn;
 
 export function init() {
     dialog = document.getElementById('preferences-dialog');
@@ -19,6 +19,7 @@ export function init() {
     stopHotkey = document.getElementById('pref-stop-hotkey');
     fadeoutHotkey = document.getElementById('pref-fadeout-hotkey');
     themeSelect = document.getElementById('pref-theme');
+    perfSelect = document.getElementById('pref-performance');
     saveBtn = document.getElementById('pref-save');
     cancelBtn = document.getElementById('pref-cancel');
 
@@ -62,6 +63,7 @@ function open() {
     stopHotkey.value = settings.getString('stopHotkey');
     fadeoutHotkey.value = settings.getString('fadeoutHotkey');
     themeSelect.value = settings.get('theme');
+    perfSelect.value = settings.get('performanceMode');
     dialog.showModal();
 }
 
@@ -69,10 +71,13 @@ function save() {
     const isSafetyEnabled = safetyMode.checked;
     const isPauseEnabled = enablePause.checked;
 
-    // Stop everything if we are changing critical playback modes
-    if (isSafetyEnabled !== settings.getBoolean('safetyMode') || 
-        isPauseEnabled !== settings.getBoolean('enablePause')) {
+    // If switching TO low performance, clear RAM immediately
+    if (perfSelect.value !== settings.get('performanceMode')) {
         player.stopAll();
+        if (perfSelect.value === 'low') {
+            player.clearCache();
+        }
+        // Emit will be handled in app.js for re-preloading
     }
 
     settings.set('safetyMode', isSafetyEnabled);
@@ -82,6 +87,7 @@ function save() {
     settings.set('stopHotkey', stopHotkey.value);
     settings.set('fadeoutHotkey', fadeoutHotkey.value);
     settings.set('theme', themeSelect.value);
+    settings.set('performanceMode', perfSelect.value);
 
     // Apply theme immediately
     const resolved = themeSelect.value === 'system'

@@ -30,6 +30,7 @@ export class Player {
         this._nextTimeouts = new Map();
         this._gapIntervals = new Map();
         this._bufferCache = new Map(); // fileId -> AudioBuffer
+        this._readyFiles = new Set(); // fileId -> boolean (sync check for UI)
     }
 
     get audioContext() {
@@ -95,34 +96,44 @@ export class Player {
             }
         }
 
-        // 3. Optimized start: Skip loading event if buffer is ready
+        // 3. Start playback
         let buffer = this._bufferCache.get(zap.fileId);
-        if (!buffer) {
-            const cached = await db.getDecodedAudio(zap.fileId);
-            if (cached) {
-                buffer = this._reconstructBuffer(cached);
-                this._bufferCache.set(zap.fileId, buffer);
-            }
-        }
-
+        
         if (buffer) {
+            // Instant start from RAM
             this._startSource(zap, buffer);
         } else {
+            // Any async work (DB fetch or Decoding) needs a loading spinner
             state.emit('play:loading', { uuid: zap.uuid });
+
             try {
-                const blob = await db.getAudioBlob(zap.fileId);
-                if (!blob) {
-                    console.warn(`Audio file not found for zap "${zap.name}"`);
-                    return;
+                // Try to get from decoded cache (chunked DB)
+                const cached = await db.getDecodedAudio(zap.fileId);
+                if (cached) {
+                    buffer = this._reconstructBuffer(cached);
+                    this._bufferCache.set(zap.fileId, buffer);
                 }
-                const arrayBuffer = await blob.arrayBuffer();
-                buffer = await this._ctx.decodeAudioData(arrayBuffer);
-                db.storeDecodedAudio(zap.fileId, buffer);
-                this._bufferCache.set(zap.fileId, buffer);
+
+                if (!buffer) {
+                    // Not in cache, decode from original blob
+                    const blob = await db.getAudioBlob(zap.fileId);
+                    if (!blob) {
+                        console.warn(`Audio file not found for zap "${zap.name}"`);
+                        state.emit('play:stopped', { uuid: zap.uuid });
+                        return;
+                    }
+                    const arrayBuffer = await blob.arrayBuffer();
+                    buffer = await this._ctx.decodeAudioData(arrayBuffer);
+                    
+                    this._bufferCache.set(zap.fileId, buffer);
+                    // Also store to DB for next time
+                    db.storeDecodedAudio(zap.fileId, buffer).catch(() => {});
+                }
+
                 this._startSource(zap, buffer);
             } catch (e) {
-                console.error(`Failed to decode audio for "${zap.name}":`, e);
-                state.emit('error', { message: `Could not play "${zap.name}" — audio format may not be supported.` });
+                console.error(`Failed to prepare audio for "${zap.name}":`, e);
+                state.emit('error', { message: `Could not play "${zap.name}".` });
                 state.emit('play:stopped', { uuid: zap.uuid });
             }
         }
@@ -226,6 +237,8 @@ export class Player {
     stop(uuid, silent = false) {
         const pb = this._active.get(uuid);
         if (!pb) return;
+
+        const fileId = pb.zap.fileId;
 
         // Clean up
         try { pb.sourceNode.onended = null; pb.sourceNode.stop(); } catch (e) { /* already stopped */ }
@@ -450,6 +463,15 @@ export class Player {
     async preloadAll(zaps) {
         if (zaps.length === 0) return;
         console.log(`Player: Starting parallel preload for ${zaps.length} sounds`);
+
+        // Initial sync of ready files from DB for UI responsiveness
+        try {
+            const allMetadata = await db.getAll('decodedAudio');
+            for (const m of allMetadata) this._readyFiles.add(m.fileId);
+        } catch (e) {
+            console.warn('Player: Failed to sync ready files from DB', e);
+        }
+
         const total = zaps.length;
         this._ensureContext();
         
@@ -487,10 +509,13 @@ export class Player {
         }
 
         const cached = await db.getDecodedAudio(zap.fileId);
+        
         if (cached) {
             try {
                 const buffer = this._reconstructBuffer(cached);
+                // ALWAYS put in RAM for instant playback
                 this._bufferCache.set(zap.fileId, buffer);
+                this._readyFiles.add(zap.fileId);
                 state.emit('preload:zap-done', { uuid: zap.uuid });
                 return;
             } catch (reconstructError) {
@@ -509,29 +534,31 @@ export class Player {
             const arrayBuffer = await blob.arrayBuffer();
             const buffer = await this._ctx.decodeAudioData(arrayBuffer);
             
+            // Store in RAM first for INSTANT playback
             this._bufferCache.set(zap.fileId, buffer);
-            state.emit('preload:zap-done', { uuid: zap.uuid });
-
-            // Only attempt persistent cache if it's not too large (e.g. < 20MB in PCM)
-            // PCM size = channels * length * 4 bytes
-            const pcmSize = buffer.numberOfChannels * buffer.length * 4;
-            if (pcmSize < 20 * 1024 * 1024) {
-                try {
-                    await db.storeDecodedAudio(zap.fileId, buffer);
-                } catch (dbError) {
-                    // Quietly ignore quota errors, memory cache is enough
-                }
-            } else {
-                console.debug(`Preload: "${zap.name}" is too large for persistent cache (${(pcmSize/1e6).toFixed(1)}MB), memory only.`);
+            this._readyFiles.add(zap.fileId);
+            
+            // Store in DB chunks for Firefox stability
+            try {
+                await db.storeDecodedAudio(zap.fileId, buffer);
+            } catch (dbError) {
+                console.warn(`Persistent cache storage failed for "${zap.name}":`, dbError);
             }
+
+            state.emit('preload:zap-done', { uuid: zap.uuid });
         } catch (e) {
             console.error(`Preload failed for "${zap.name}":`, e);
-            state.emit('preload:zap-done', { uuid: zap.uuid }); // Still emit done so UI doesn't hang
+            state.emit('preload:zap-done', { uuid: zap.uuid });
         }
     }
 
     isPreloaded(zap) {
         return this._bufferCache.has(zap.fileId);
+    }
+
+    // Synchronous check for UI (powered by _readyFiles set)
+    isReady(zap) {
+        return this._bufferCache.has(zap.fileId) || this._readyFiles.has(zap.fileId);
     }
 
     isActive(uuid) {
