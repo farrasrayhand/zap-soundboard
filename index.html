@@ -45,7 +45,6 @@
         <div class="popover-separator"></div>
         <div class="popover-item" data-action="preferences">Preferences</div>
         <div class="popover-item" data-action="tutorial">Show Tutorial</div>
-        <div class="popover-item" data-action="prune">Clear Cache</div>
         <div class="popover-item destructive" data-action="reset">Reset All Data...</div>
         <div class="popover-separator"></div>
         <div class="popover-item" data-action="about">About Zap</div>
@@ -252,14 +251,21 @@
                     <option value="dark">Dark</option>
                 </select>
             </div>
-            <div class="form-group" style="margin-top:12px;">
+            <div class="form-group" style="margin-top:12px; display: none;">
                 <label for="pref-performance">Performance Mode (RAM Usage)</label>
                 <select id="pref-performance">
                     <option value="high">High Performance (Instant / High RAM)</option>
-                    <option value="low">Battery Saver (Smart / Low RAM)</option>
                 </select>
-                <p style="font-size:11px;color:var(--fg-dim);margin-top:4px;">
-                    'High' keeps all sounds in RAM. 'Saver' clears long sounds from RAM when stopped to save memory on older devices.
+            </div>
+            
+            <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+                <label style="display:block;margin-bottom:8px;font-weight:bold;">Storage Management</label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <button id="pref-prune" class="btn-secondary" style="font-size:12px;padding:6px;">Prune Unused Audio</button>
+                    <button id="pref-clear-cache" class="btn-secondary" style="font-size:12px;padding:6px;">Clear Decoded Cache</button>
+                </div>
+                <p style="font-size:11px;color:var(--fg-dim);margin-top:6px;">
+                    'Prune' removes audio files that are no longer linked to any sound card. 'Clear Cache' clears the fast-loading version of sounds to free up space (they will be re-generated on next play).
                 </p>
             </div>
         </div>

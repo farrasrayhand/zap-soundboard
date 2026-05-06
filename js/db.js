@@ -61,96 +61,125 @@ export class Database {
 
     // Generic CRUD
 
+    async _withTransaction(storeNames, mode, callback) {
+        if (!this._db) await this.open();
+        
+        try {
+            const tx = this._db.transaction(storeNames, mode);
+            return await callback(tx);
+        } catch (e) {
+            // Firefox specific: "A mutation operation was attempted on a database that did not allow mutations."
+            // This can happen if the database connection was lost, disk is full, or in private browsing.
+            if (e.message?.includes('mutation') || e.name === 'InvalidStateError' || e.name === 'TransactionInactiveError') {
+                console.warn('DB: Mutation failed, attempting to re-open database...', e);
+                try { this.close(); } catch (closeErr) {}
+                await this.open();
+                const tx = this._db.transaction(storeNames, mode);
+                return await callback(tx);
+            }
+            throw e;
+        }
+    }
+
     async getAll(storeName) {
-        return new Promise((resolve, reject) => {
-            const tx = this._db.transaction(storeName, 'readonly');
-            const store = tx.objectStore(storeName);
-            const request = store.getAll();
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
+        return this._withTransaction(storeName, 'readonly', (tx) => {
+            return new Promise((resolve, reject) => {
+                const store = tx.objectStore(storeName);
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
         });
     }
 
     async get(storeName, id) {
-        return new Promise((resolve, reject) => {
-            const tx = this._db.transaction(storeName, 'readonly');
-            const store = tx.objectStore(storeName);
-            const request = store.get(id);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
+        return this._withTransaction(storeName, 'readonly', (tx) => {
+            return new Promise((resolve, reject) => {
+                const store = tx.objectStore(storeName);
+                const request = store.get(id);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
         });
     }
 
     async put(storeName, object) {
-        return new Promise((resolve, reject) => {
-            const tx = this._db.transaction(storeName, 'readwrite');
-            const store = tx.objectStore(storeName);
-            const request = store.put(object);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
+        return this._withTransaction(storeName, 'readwrite', (tx) => {
+            return new Promise((resolve, reject) => {
+                const store = tx.objectStore(storeName);
+                const request = store.put(object);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
         });
     }
 
     async delete(storeName, id) {
-        return new Promise((resolve, reject) => {
-            const tx = this._db.transaction(storeName, 'readwrite');
-            const store = tx.objectStore(storeName);
-            const request = store.delete(id);
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
+        return this._withTransaction(storeName, 'readwrite', (tx) => {
+            return new Promise((resolve, reject) => {
+                const store = tx.objectStore(storeName);
+                const request = store.delete(id);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
         });
     }
 
     async clear(storeName) {
-        return new Promise((resolve, reject) => {
-            const tx = this._db.transaction(storeName, 'readwrite');
-            const store = tx.objectStore(storeName);
-            const request = store.clear();
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
+        return this._withTransaction(storeName, 'readwrite', (tx) => {
+            return new Promise((resolve, reject) => {
+                const store = tx.objectStore(storeName);
+                const request = store.clear();
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
         });
     }
 
     async count(storeName) {
-        return new Promise((resolve, reject) => {
-            const tx = this._db.transaction(storeName, 'readonly');
-            const store = tx.objectStore(storeName);
-            const request = store.count();
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
+        return this._withTransaction(storeName, 'readonly', (tx) => {
+            return new Promise((resolve, reject) => {
+                const store = tx.objectStore(storeName);
+                const request = store.count();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
         });
     }
 
     async getByIndex(storeName, indexName, value) {
-        return new Promise((resolve, reject) => {
-            const tx = this._db.transaction(storeName, 'readonly');
-            const store = tx.objectStore(storeName);
-            const index = store.index(indexName);
-            const request = index.getAll(value);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
+        return this._withTransaction(storeName, 'readonly', (tx) => {
+            return new Promise((resolve, reject) => {
+                const store = tx.objectStore(storeName);
+                const index = store.index(indexName);
+                const request = index.getAll(value);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
         });
     }
 
     async batchPut(storeName, objects) {
-        return new Promise((resolve, reject) => {
-            const tx = this._db.transaction(storeName, 'readwrite');
-            const store = tx.objectStore(storeName);
-            for (const obj of objects)
-                store.put(obj);
-            tx.oncomplete = () => resolve();
-            tx.onerror = () => reject(tx.error);
+        return this._withTransaction(storeName, 'readwrite', (tx) => {
+            return new Promise((resolve, reject) => {
+                const store = tx.objectStore(storeName);
+                for (const obj of objects)
+                    store.put(obj);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            });
         });
     }
 
     async batchDelete(storeName, ids) {
-        return new Promise((resolve, reject) => {
-            const tx = this._db.transaction(storeName, 'readwrite');
-            const store = tx.objectStore(storeName);
-            for (const id of ids)
-                store.delete(id);
-            tx.oncomplete = () => resolve();
-            tx.onerror = () => reject(tx.error);
+        return this._withTransaction(storeName, 'readwrite', (tx) => {
+            return new Promise((resolve, reject) => {
+                const store = tx.objectStore(storeName);
+                for (const id of ids)
+                    store.delete(id);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            });
         });
     }
 
@@ -192,13 +221,12 @@ export class Database {
 
     // Decoded audio PCM cache (persistent)
     async storeDecodedAudio(fileId, audioBuffer) {
-        const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB per chunk for stability
+        const CHUNK_SIZE = 1024 * 1024; // 1M elements (~4MB) per chunk for better compatibility
         const channels = [];
         for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
             channels.push(audioBuffer.getChannelData(c));
         }
 
-        // We store metadata in 'decodedAudio' and actual PCM data in a new 'decodedChunks' store
         const metadata = {
             fileId,
             sampleRate: audioBuffer.sampleRate,
@@ -207,55 +235,117 @@ export class Database {
             timestamp: Date.now()
         };
 
-        await this.put('decodedAudio', metadata);
+        return this._withTransaction(['decodedAudio', 'decodedChunks'], 'readwrite', (tx) => {
+            const metadataStore = tx.objectStore('decodedAudio');
+            metadataStore.put(metadata);
 
-        // Clear old chunks if any
-        await this._deleteChunks(fileId);
+            const chunkStore = tx.objectStore('decodedChunks');
+            
+            // First, delete existing chunks for this file
+            const index = chunkStore.index('by-file');
+            const cursorRequest = index.openKeyCursor(IDBKeyRange.only(fileId));
+            cursorRequest.onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    chunkStore.delete(cursor.primaryKey);
+                    cursor.continue();
+                }
+            };
 
-        // Store each channel's data in chunks
-        for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
-            const data = channels[c];
-            let chunkIdx = 0;
-            for (let i = 0; i < data.length; i += CHUNK_SIZE) {
-                const chunk = data.slice(i, i + CHUNK_SIZE);
-                await this.put('decodedChunks', {
-                    id: `${fileId}_${c}_${chunkIdx}`,
-                    fileId,
-                    channel: c,
-                    index: chunkIdx,
-                    data: chunk
-                });
-                chunkIdx++;
+            // While the delete is happening (or after), start putting new chunks
+            // IDB will queue these operations in the same transaction.
+            console.debug(`DB: Storing ${audioBuffer.numberOfChannels} channels for ${fileId} in chunks...`);
+
+            for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+                const data = channels[c];
+                let chunkIdx = 0;
+                for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+                    const chunk = data.slice(i, i + CHUNK_SIZE);
+                    chunkStore.put({
+                        id: `${fileId}_${c}_${chunkIdx.toString().padStart(5, '0')}`, // Pad for correct sorting if needed
+                        fileId,
+                        channel: c,
+                        index: chunkIdx,
+                        data: chunk
+                    });
+                    chunkIdx++;
+                }
             }
-        }
+
+            return new Promise((resolve, reject) => {
+                tx.oncomplete = () => {
+                    console.debug(`DB: Finished storing chunks for ${fileId}`);
+                    resolve();
+                };
+                tx.onerror = () => reject(tx.error);
+                tx.onabort = () => reject(new Error('Transaction aborted'));
+            });
+        });
     }
 
-    async getDecodedAudio(fileId) {
+    async getDecodedAudio(fileId, audioContext = null) {
         const metadata = await this.get('decodedAudio', fileId);
         if (!metadata) return null;
 
-        try {
-            // Fetch ALL chunks for this file in one query
-            const allChunks = await this.getByIndex('decodedChunks', 'by-file', fileId);
-            
-            const channels = [];
-            for (let c = 0; c < metadata.numberOfChannels; c++) {
-                const channelChunks = allChunks.filter(chunk => chunk.channel === c);
-                channelChunks.sort((a, b) => a.index - b.index);
-                
-                const fullChannel = new Float32Array(metadata.length);
-                let offset = 0;
-                for (const chunk of channelChunks) {
-                    fullChannel.set(chunk.data, offset);
-                    offset += chunk.data.length;
+        return this._withTransaction('decodedChunks', 'readonly', async (tx) => {
+            try {
+                const store = tx.objectStore('decodedChunks');
+                const index = store.index('by-file-channel');
+
+                const channelPromises = [];
+                for (let c = 0; c < metadata.numberOfChannels; c++) {
+                    channelPromises.push(new Promise((resolve, reject) => {
+                        const request = index.getAll(IDBKeyRange.only([fileId, c]));
+                        request.onsuccess = () => resolve(request.result);
+                        request.onerror = () => reject(request.error);
+                    }));
                 }
-                channels.push(fullChannel);
+
+                const allChannelChunks = await Promise.all(channelPromises);
+                
+                let result;
+                if (audioContext) {
+                    // Reconstruct directly into AudioBuffer to save memory and copies
+                    result = audioContext.createBuffer(metadata.numberOfChannels, metadata.length, metadata.sampleRate);
+                } else {
+                    result = { ...metadata, channels: [] };
+                }
+
+                const CHUNK_SIZE = 1024 * 1024;
+                const expectedChunksPerChannel = Math.ceil(metadata.length / CHUNK_SIZE);
+
+                for (let c = 0; c < metadata.numberOfChannels; c++) {
+                    const channelChunks = allChannelChunks[c];
+                    
+                    if (channelChunks.length < expectedChunksPerChannel) {
+                        console.warn(`DB: Incomplete chunks for ${fileId} channel ${c}. Expected ${expectedChunksPerChannel}, got ${channelChunks.length}.`);
+                        return null; // Fallback to re-decoding
+                    }
+
+                    channelChunks.sort((a, b) => a.index - b.index);
+                    
+                    if (audioContext) {
+                        let offset = 0;
+                        for (const chunk of channelChunks) {
+                            result.copyToChannel(chunk.data, c, offset);
+                            offset += chunk.data.length;
+                        }
+                    } else {
+                        const fullChannel = new Float32Array(metadata.length);
+                        let offset = 0;
+                        for (const chunk of channelChunks) {
+                            fullChannel.set(chunk.data, offset);
+                            offset += chunk.data.length;
+                        }
+                        result.channels.push(fullChannel);
+                    }
+                }
+                return result;
+            } catch (e) {
+                console.error('Failed to reconstruct chunked audio:', e);
+                return null;
             }
-            return { ...metadata, channels };
-        } catch (e) {
-            console.error('Failed to reconstruct chunked audio:', e);
-            return null;
-        }
+        });
     }
 
     async deleteDecodedAudio(fileId) {
@@ -273,6 +363,26 @@ export class Database {
     async hasDecodedAudio(fileId) {
         const record = await this.get('decodedAudio', fileId);
         return !!record;
+    }
+
+    async clearDecodedCache() {
+        console.log('DB: Clearing all decoded audio cache to free up space...');
+        await Promise.all([
+            this.clear('decodedAudio'),
+            this.clear('decodedChunks')
+        ]);
+    }
+
+    /**
+     * Request persistent storage from the browser to increase quota limits.
+     */
+    static async requestPersistence() {
+        if (navigator.storage && navigator.storage.persist) {
+            const isPersisted = await navigator.storage.persist();
+            console.log(`DB: Storage persistence ${isPersisted ? 'granted' : 'denied'}`);
+            return isPersisted;
+        }
+        return false;
     }
 }
 

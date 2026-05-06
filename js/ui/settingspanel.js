@@ -7,7 +7,7 @@ import { settings } from '../settings.js';
 import { player } from '../player.js';
 
 let dialog, safetyMode, hideStop, enablePause, fadeoutDuration, fadeoutValue;
-let stopHotkey, fadeoutHotkey, themeSelect, perfSelect, saveBtn, cancelBtn;
+let stopHotkey, fadeoutHotkey, themeSelect, perfSelect, saveBtn, cancelBtn, pruneBtn, clearCacheBtn;
 
 export function init() {
     dialog = document.getElementById('preferences-dialog');
@@ -22,6 +22,8 @@ export function init() {
     perfSelect = document.getElementById('pref-performance');
     saveBtn = document.getElementById('pref-save');
     cancelBtn = document.getElementById('pref-cancel');
+    pruneBtn = document.getElementById('pref-prune');
+    clearCacheBtn = document.getElementById('pref-clear-cache');
 
     fadeoutDuration.addEventListener('input', () => {
         fadeoutValue.textContent = parseFloat(fadeoutDuration.value).toFixed(1) + 's';
@@ -39,6 +41,16 @@ export function init() {
 
     cancelBtn.addEventListener('click', () => dialog.close());
     saveBtn.addEventListener('click', save);
+
+    pruneBtn.addEventListener('click', () => {
+        state.emit('shortcut:prune', {});
+    });
+
+    clearCacheBtn.addEventListener('click', async () => {
+        if (confirm('Clear all decoded audio cache?\n\nThis will free up space, but sounds will need to be re-decoded the next time they are played.')) {
+            state.emit('shortcut:clear-cache', {});
+        }
+    });
 
     safetyMode.addEventListener('click', () => {
         if (safetyMode.checked) {
@@ -70,15 +82,6 @@ function open() {
 function save() {
     const isSafetyEnabled = safetyMode.checked;
     const isPauseEnabled = enablePause.checked;
-
-    // If switching TO low performance, clear RAM immediately
-    if (perfSelect.value !== settings.get('performanceMode')) {
-        player.stopAll();
-        if (perfSelect.value === 'low') {
-            player.clearCache();
-        }
-        // Emit will be handled in app.js for re-preloading
-    }
 
     settings.set('safetyMode', isSafetyEnabled);
     settings.set('hideStopButton', hideStop.checked);

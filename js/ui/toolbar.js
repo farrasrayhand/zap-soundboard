@@ -116,9 +116,6 @@ function handleMenuAction(action) {
         case 'preferences':
             state.emit('shortcut:preferences', {});
             break;
-        case 'prune':
-            state.emit('shortcut:prune', {});
-            break;
         case 'tutorial':
             state.emit('shortcut:tutorial', {});
             break;

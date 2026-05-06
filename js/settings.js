@@ -12,7 +12,7 @@ const DEFAULTS = {
     lastSelectedCollection: '',
     theme: 'system',
     showTutorial: true,
-    performanceMode: 'low', // 'high' (keep in RAM) or 'low' (clear RAM for long sounds)
+    performanceMode: 'high', // 'high' (keep in RAM)
 };
 
 const PREFIX = 'zap.';

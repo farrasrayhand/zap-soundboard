@@ -31,21 +31,24 @@ export class Player {
         this._gapIntervals = new Map();
         this._bufferCache = new Map(); // fileId -> AudioBuffer
         this._readyFiles = new Set(); // fileId -> boolean (sync check for UI)
+        this._loadingPromises = new Map(); // fileId -> Promise<AudioBuffer>
+        this._pendingPlays = new Set(); // uuid -> boolean
     }
 
     get audioContext() {
         return this._ctx;
     }
 
-    _ensureContext() {
+    async _ensureContext() {
         if (!this._ctx) {
-            this._ctx = new AudioContext();
+            this._ctx = new (window.AudioContext || window.webkitAudioContext)();
             this._masterGain = this._ctx.createGain();
             this._masterGain.gain.value = 1.0;
             this._masterGain.connect(this._ctx.destination);
         }
-        if (this._ctx.state === 'suspended')
-            this._ctx.resume();
+        if (this._ctx.state === 'suspended') {
+            await this._ctx.resume();
+        }
     }
 
     _reconstructBuffer(record) {
@@ -64,79 +67,132 @@ export class Player {
     }
 
     async play(zap) {
-        this._ensureContext();
+        if (this._pendingPlays.has(zap.uuid)) return;
+        this._pendingPlays.add(zap.uuid);
 
-        const safetyMode = settings.getBoolean('safetyMode');
-        const enablePause = settings.getBoolean('enablePause');
+        try {
+            await this._ensureContext();
 
-        // 1. Handle clicking the SAME zap
-        if (this._active.has(zap.uuid)) {
-            if (enablePause && !safetyMode) {
-                // Individual pause/resume
-                if (!zap.paused) {
-                    this._pausePlayback(zap.uuid);
+            const safetyMode = settings.getBoolean('safetyMode');
+            const enablePause = settings.getBoolean('enablePause');
+
+            // 1. Handle clicking the SAME zap
+            if (this._active.has(zap.uuid)) {
+                if (enablePause && !safetyMode) {
+                    // Individual pause/resume
+                    if (!zap.paused) {
+                        this._pausePlayback(zap.uuid);
+                    } else {
+                        this._resumePlayback(zap.uuid);
+                    }
+                    return;
                 } else {
-                    this._resumePlayback(zap.uuid);
+                    // Restart behavior: stop first (silently to avoid UI reset before immediate play)
+                    this.stop(zap.uuid, true);
                 }
-                return;
-            } else {
-                // Restart behavior: stop first (silently to avoid UI reset before immediate play)
-                this.stop(zap.uuid, true);
             }
-        }
 
-        // 2. Handle clicking a DIFFERENT zap while something is playing
-        if (this._active.size > 0) {
-            if (safetyMode) {
-                // Safety Mode: Block playback (should be blocked by UI buttons too)
-                return;
-            } else {
-                // Safety Mode OFF: Stop current sounds before playing the new one
-                this.stopAll();
-            }
-        }
-
-        // 3. Start playback
-        let buffer = this._bufferCache.get(zap.fileId);
-        
-        if (buffer) {
-            // Instant start from RAM
-            this._startSource(zap, buffer);
-        } else {
-            // Any async work (DB fetch or Decoding) needs a loading spinner
-            state.emit('play:loading', { uuid: zap.uuid });
-
-            try {
-                // Try to get from decoded cache (chunked DB)
-                const cached = await db.getDecodedAudio(zap.fileId);
-                if (cached) {
-                    buffer = this._reconstructBuffer(cached);
-                    this._bufferCache.set(zap.fileId, buffer);
+            // 2. Handle clicking a DIFFERENT zap while something is playing
+            if (this._active.size > 0) {
+                if (safetyMode) {
+                    // Safety Mode: Block playback (should be blocked by UI buttons too)
+                    return;
+                } else {
+                    // Safety Mode OFF: Stop current sounds before playing the new one
+                    this.stopAll();
                 }
+            }
 
-                if (!buffer) {
-                    // Not in cache, decode from original blob
-                    const blob = await db.getAudioBlob(zap.fileId);
-                    if (!blob) {
-                        console.warn(`Audio file not found for zap "${zap.name}"`);
+            // 3. Start playback
+            let buffer = this._bufferCache.get(zap.fileId);
+            
+            if (!buffer && zap.fileId) {
+                // Check if it is currently being preloaded
+                const loadingPromise = this._loadingPromises.get(zap.fileId);
+                if (loadingPromise) {
+                    state.emit('play:loading', { uuid: zap.uuid });
+                    try {
+                        buffer = await loadingPromise;
+                    } catch (e) {
+                        console.error(`Playback wait for preload failed for "${zap.name}":`, e);
+                    }
+                }
+            }
+
+            if (buffer) {
+                // Instant start from RAM
+                this._startSource(zap, buffer);
+            } else {
+                // Any async work (DB fetch or Decoding) needs a loading spinner
+                state.emit('play:loading', { uuid: zap.uuid });
+
+                try {
+                    // Try to get from decoded cache (chunked DB)
+                    // Pass this._ctx to reconstruct directly into AudioBuffer
+                    buffer = await this._loadAndCache(zap);
+
+                    if (!buffer) {
+                        console.warn(`Audio file not found or failed to load for zap "${zap.name}"`);
                         state.emit('play:stopped', { uuid: zap.uuid });
                         return;
                     }
+
+                    this._startSource(zap, buffer);
+                } catch (e) {
+                    console.error(`Failed to prepare audio for "${zap.name}":`, e);
+                    state.emit('error', { message: `Could not play "${zap.name}".` });
+                    state.emit('play:stopped', { uuid: zap.uuid });
+                }
+            }
+        } finally {
+            this._pendingPlays.delete(zap.uuid);
+        }
+    }
+
+    /**
+     * Unified loading logic with synchronization
+     */
+    async _loadAndCache(zap) {
+        if (!zap.fileId) return null;
+        if (this._bufferCache.has(zap.fileId)) return this._bufferCache.get(zap.fileId);
+
+        // Check if already loading
+        if (this._loadingPromises.has(zap.fileId)) {
+            return await this._loadingPromises.get(zap.fileId);
+        }
+
+        const promise = (async () => {
+            try {
+                state.emit('preload:loading', { uuid: zap.uuid });
+
+                // 1. Try DB cache
+                let buffer = await db.getDecodedAudio(zap.fileId, this._ctx);
+                
+                if (!buffer) {
+                    // 2. Decode from original blob
+                    const blob = await db.getAudioBlob(zap.fileId);
+                    if (!blob) return null;
+
                     const arrayBuffer = await blob.arrayBuffer();
                     buffer = await this._ctx.decodeAudioData(arrayBuffer);
                     
-                    this._bufferCache.set(zap.fileId, buffer);
-                    // Also store to DB for next time
-                    db.storeDecodedAudio(zap.fileId, buffer).catch(() => {});
+                    // Store to DB for next time
+                    db.storeDecodedAudio(zap.fileId, buffer).catch(err => {
+                        console.warn(`Failed to store decoded audio for "${zap.name}":`, err);
+                    });
                 }
 
-                this._startSource(zap, buffer);
-            } catch (e) {
-                console.error(`Failed to prepare audio for "${zap.name}":`, e);
-                state.emit('error', { message: `Could not play "${zap.name}".` });
-                state.emit('play:stopped', { uuid: zap.uuid });
+                this._bufferCache.set(zap.fileId, buffer);
+                this._readyFiles.add(zap.fileId);
+                return buffer;
+            } finally {
+                this._loadingPromises.delete(zap.fileId);
+                state.emit('preload:zap-done', { uuid: zap.uuid });
             }
-        }
+        })();
+
+        this._loadingPromises.set(zap.fileId, promise);
+        return await promise;
     }
 
     _startSource(zap, buffer) {
@@ -260,18 +316,6 @@ export class Player {
 
         if (!silent) {
             state.emit('play:stopped', { uuid });
-        }
-
-        // Memory Management: In 'Battery Saver' mode, clear large sounds from RAM after they stop.
-        if (settings.get('performanceMode') === 'low' && fileId) {
-            const buffer = this._bufferCache.get(fileId);
-            if (buffer) {
-                const pcmSize = buffer.numberOfChannels * buffer.length * 4;
-                if (pcmSize > 10 * 1024 * 1024) { // > 10MB
-                    console.debug(`Player (Saver): Clearing large buffer for "${pb.zap.name}" from RAM after playback.`);
-                    this._bufferCache.delete(fileId);
-                }
-            }
         }
     }
 
@@ -474,7 +518,7 @@ export class Player {
 
     async preloadAll(zaps) {
         if (zaps.length === 0) return;
-        console.log(`Player: Starting parallel preload for ${zaps.length} sounds`);
+        console.log(`Player: Starting sequential preload for ${zaps.length} sounds`);
 
         // Initial sync of ready files from DB for UI responsiveness
         try {
@@ -494,16 +538,11 @@ export class Player {
         state.emit('preload:start', { total });
         let loaded = 0;
 
-        // Process in small batches to avoid overwhelming the CPU/Memory
-        const BATCH_SIZE = 4;
-        for (let i = 0; i < zaps.length; i += BATCH_SIZE) {
-            const batch = zaps.slice(i, i + BATCH_SIZE);
-            await Promise.all(batch.map(async (zap) => {
-                await this._preloadOne(zap);
-                loaded++;
-                const pct = Math.round((loaded / total) * 100);
-                state.emit('preload:progress', { loaded, total, pct, name: zap.name });
-            }));
+        for (const zap of zaps) {
+            await this._preloadOne(zap);
+            loaded++;
+            const pct = Math.round((loaded / total) * 100);
+            state.emit('preload:progress', { loaded, total, pct, name: zap.name });
         }
         
         state.emit('preload:done', { total });
@@ -515,62 +554,8 @@ export class Player {
             return;
         }
 
-        if (this._bufferCache.has(zap.fileId)) {
-            state.emit('preload:zap-done', { uuid: zap.uuid });
-            return;
-        }
-
-        const isLowPerf = settings.get('performanceMode') === 'low';
-        const cached = await db.getDecodedAudio(zap.fileId);
-        
-        if (cached) {
-            try {
-                const buffer = this._reconstructBuffer(cached);
-                const pcmSize = buffer.numberOfChannels * buffer.length * 4;
-
-                // Smart Preload: In Battery Saver mode, don't keep large sounds (>10MB) in RAM during startup
-                if (isLowPerf && pcmSize > 10 * 1024 * 1024) {
-                    console.debug(`Preload (Saver): "${zap.name}" verified in DB, skipping RAM.`);
-                } else {
-                    this._bufferCache.set(zap.fileId, buffer);
-                }
-                
-                this._readyFiles.add(zap.fileId);
-                state.emit('preload:zap-done', { uuid: zap.uuid });
-                return;
-            } catch (reconstructError) {
-                console.warn(`Cache corrupt for "${zap.name}", re-decoding...`);
-                await db.deleteDecodedAudio(zap.fileId);
-            }
-        }
-
-        // Cache miss or corrupt, decode from scratch
         try {
-            const blob = await db.getAudioBlob(zap.fileId);
-            if (!blob) {
-                state.emit('preload:zap-done', { uuid: zap.uuid });
-                return;
-            }
-            const arrayBuffer = await blob.arrayBuffer();
-            const buffer = await this._ctx.decodeAudioData(arrayBuffer);
-            const pcmSize = buffer.numberOfChannels * buffer.length * 4;
-            
-            // Smart RAM decision
-            if (isLowPerf && pcmSize > 10 * 1024 * 1024) {
-                console.debug(`Preload (Saver): "${zap.name}" decoded and cached to DB, discarding from RAM.`);
-            } else {
-                this._bufferCache.set(zap.fileId, buffer);
-            }
-            
-            this._readyFiles.add(zap.fileId);
-            
-            // Store in DB chunks for Firefox stability
-            try {
-                await db.storeDecodedAudio(zap.fileId, buffer);
-            } catch (dbError) {
-                console.warn(`Persistent cache storage failed for "${zap.name}":`, dbError);
-            }
-
+            await this._loadAndCache(zap);
             state.emit('preload:zap-done', { uuid: zap.uuid });
         } catch (e) {
             console.error(`Preload failed for "${zap.name}":`, e);

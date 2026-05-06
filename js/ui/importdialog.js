@@ -119,180 +119,202 @@ async function doImport(replace) {
     dialog.close();
 
     try {
-        // Import settings
-        showProgress('Importing settings', 0, 1);
-        if (metadata.settings) {
-            console.log('Import: Applying settings');
-            const s = metadata.settings;
-            if (s.safetyMode !== undefined) settings.set('safetyMode', s.safetyMode);
-            if (s.hideStopButton !== undefined) settings.set('hideStopButton', s.hideStopButton);
-            if (s.enablePause !== undefined) settings.set('enablePause', s.enablePause);
-            if (s.fadeoutDuration !== undefined) settings.set('fadeoutDuration', s.fadeoutDuration);
-            if (s.stopHotkey !== undefined) settings.set('stopHotkey', s.stopHotkey);
-            if (s.fadeoutHotkey !== undefined) settings.set('fadeoutHotkey', s.fadeoutHotkey);
-            if (s.performanceMode !== undefined) settings.set('performanceMode', s.performanceMode);
-        }
-
-        // Build name->collection lookup for existing collections
-        const existingByName = new Map();
-        for (const c of collectionsService.items)
-            existingByName.set(c.name, c);
-
-        const colMap = new Map(); // old UUID -> new Collection
-
-        let importedCollections = 0;
-        let importedGroups = 0;
-        let importedZaps = 0;
-        let skippedZaps = 0;
-
-        const collectionsToImport = metadata.collections || [];
-        console.log(`Import: Processing ${collectionsToImport.length} collections`);
-
-        for (const colData of collectionsToImport) {
-            let collection = null;
-            const local = existingByName.get(colData.name);
-
-            if (replace && local) {
-                console.log(`Import: Replacing collection "${colData.name}"`);
-                await zapsService.removeAllOfCollection(local.uuid);
-                collection = local;
-            } else if (!replace && local) {
-                console.log(`Import: Keeping both, creating new collection for "${colData.name}"`);
-                collection = await collectionsService.add({ name: colData.name, uuid: null });
-            } else {
-                console.log(`Import: Creating collection "${colData.name}"`);
-                collection = await collectionsService.add({ name: colData.name, uuid: colData.uuid });
-            }
-
-            colMap.set(colData.uuid, collection);
-            existingByName.set(collection.name, collection);
-            importedCollections++;
-        }
-
-        // Import groups
-        if (metadata.groups) {
-            console.log(`Import: Processing ${metadata.groups.length} groups`);
-            for (const groupData of metadata.groups) {
-                const collection = colMap.get(groupData.collectionUuid);
-                if (collection) {
-                    try {
-                        await zapsService.addGroup({
-                            name: groupData.name,
-                            collectionUuid: collection.uuid,
-                            uuid: groupData.uuid,
-                            position: groupData.position,
-                        });
-                        importedGroups++;
-                    } catch (e) { 
-                        console.warn(`Import: Group "${groupData.name}" already exists, skipping`);
-                    }
-                }
-            }
-        }
-
-        // Import zaps
-        if (metadata.zaps) {
-            const totalZaps = metadata.zaps.length;
-            console.log(`Import: Processing ${totalZaps} zaps`);
-            for (let zi = 0; zi < totalZaps; zi++) {
-                const zapData = metadata.zaps[zi];
-                showProgress('Importing sounds', zi + 1, totalZaps);
-                
-                const existing = zapsService.find({ uuid: zapData.uuid });
-                if (existing) {
-                    const targetCol = colMap.get(zapData.collectionUuid);
-                    if (existing.collectionUuid === targetCol?.uuid) {
-                        skippedZaps++;
-                        continue;
-                    }
-                    skippedZaps++;
-                    continue;
-                }
-
-                const collection = colMap.get(zapData.collectionUuid);
-                if (!collection) {
-                    skippedZaps++;
-                    continue;
-                }
-
-                const soundData = sounds[zapData.filename];
-                if (!soundData) {
-                    console.warn(`Import: Audio data missing for zap "${zapData.name}" (${zapData.filename})`);
-                    skippedZaps++;
-                    continue;
-                }
-
-                const fileId = crypto.randomUUID();
-                const mimeType = zapData.filename.endsWith('.ogg') ? 'audio/ogg'
-                    : zapData.filename.endsWith('.mp3') ? 'audio/mpeg'
-                    : zapData.filename.endsWith('.wav') ? 'audio/wav'
-                    : zapData.filename.endsWith('.flac') ? 'audio/flac'
-                    : 'audio/ogg';
-
-                const blob = new Blob([soundData], { type: mimeType });
-                await db.storeAudioBlob(fileId, blob, zapData.filename, mimeType);
-
-                try {
-                    await zapsService.add({
-                        name: zapData.name,
-                        collection: collection.uuid,
-                        color: zapData.color || 'gray',
-                        loop: zapData.loop || false,
-                        startTime: zapData.startTime || 0,
-                        volume: zapData.volume ?? 1.0,
-                        groupName: zapData.groupName || '',
-                        hotkey: zapData.hotkey || '',
-                        nextSoundUuid: zapData.nextSoundUuid || '',
-                        gap: zapData.gap || 0,
-                        uuid: zapData.uuid,
-                        position: zapData.position || 0,
-                        fileId,
-                        originalFilename: zapData.filename,
-                    });
-                    importedZaps++;
-                } catch (e) {
-                    console.error(`Import: Failed to add zap "${zapData.name}":`, e);
-                    skippedZaps++;
-                }
-            }
-        }
-
-        console.log('Import: Success, cleaning up');
-        hideProgress();
-
-        // Refresh UI
-        state.emit('collections:loaded', { collections: collectionsService.items });
-        console.log('Import: Reloading zaps from DB');
-        await zapsService.load();
-        
-        const lastUuid = settings.getString('lastSelectedCollection');
-        const col = lastUuid ? collectionsService.find({ uuid: lastUuid }) : (collectionsService.items.length > 0 ? collectionsService.items[0] : null);
-        if (col) {
-            console.log(`Import: Selecting collection "${col.name}"`);
-            state.emit('collection:selected', { uuid: col.uuid });
-        }
-
-        // Show collections dropdown to show imported items
-        state.emit('shortcut:collections', {});
-
-        // Auto preload all sounds immediately
-        const zapsToPreload = zapsService.zaps;
-        if (zapsToPreload.length > 0) {
-            console.log(`Import: Triggering preload for ${zapsToPreload.length} zaps`);
-            player.preloadAll(zapsToPreload);
-        }
-
-        let msg = `Imported: ${importedCollections} collections`;
-        if (importedGroups > 0) msg += `, ${importedGroups} groups`;
-        if (importedZaps > 0) msg += `, ${importedZaps} sounds`;
-        if (skippedZaps > 0) msg += ` (${skippedZaps} skipped)`;
-        showToast(msg);
-
+        await runImport(metadata, sounds, replace);
     } catch (e) {
+        const isQuotaError = e.name === 'QuotaExceededError' || 
+                            e.message?.includes('quota') || 
+                            e.message?.includes('mutation');
+        
+        if (isQuotaError) {
+            console.warn('Import: Quota or mutation error, clearing decoded cache and retrying...');
+            try {
+                await db.clearDecodedCache();
+                // Show a small notice to user
+                showToast('Storage full. Cleared cache and retrying import...', 3000);
+                // Retry the import once after clearing cache
+                await runImport(metadata, sounds, replace);
+                return;
+            } catch (retryErr) {
+                console.error('Import: Retry failed after clearing cache:', retryErr);
+                e = retryErr;
+            }
+        }
+        
         hideProgress();
         console.error('Import: Fatal error:', e);
         alert('Import failed: ' + e.message);
     }
+}
+
+async function runImport(metadata, sounds, replace) {
+    // Import settings
+    showProgress('Importing settings', 0, 1);
+    if (metadata.settings) {
+        console.log('Import: Applying settings');
+        const s = metadata.settings;
+        if (s.safetyMode !== undefined) settings.set('safetyMode', s.safetyMode);
+        if (s.hideStopButton !== undefined) settings.set('hideStopButton', s.hideStopButton);
+        if (s.enablePause !== undefined) settings.set('enablePause', s.enablePause);
+        if (s.fadeoutDuration !== undefined) settings.set('fadeoutDuration', s.fadeoutDuration);
+        if (s.stopHotkey !== undefined) settings.set('stopHotkey', s.stopHotkey);
+        if (s.fadeoutHotkey !== undefined) settings.set('fadeoutHotkey', s.fadeoutHotkey);
+        if (s.performanceMode !== undefined) settings.set('performanceMode', s.performanceMode);
+    }
+
+    // Build name->collection lookup for existing collections
+    const existingByName = new Map();
+    for (const c of collectionsService.items)
+        existingByName.set(c.name, c);
+
+    const colMap = new Map(); // old UUID -> new Collection
+
+    let importedCollections = 0;
+    let importedGroups = 0;
+    let importedZaps = 0;
+    let skippedZaps = 0;
+
+    const collectionsToImport = metadata.collections || [];
+    console.log(`Import: Processing ${collectionsToImport.length} collections`);
+
+    for (const colData of collectionsToImport) {
+        let collection = null;
+        const local = existingByName.get(colData.name);
+
+        if (replace && local) {
+            console.log(`Import: Replacing collection "${colData.name}"`);
+            await zapsService.removeAllOfCollection(local.uuid);
+            collection = local;
+        } else if (!replace && local) {
+            console.log(`Import: Keeping both, creating new collection for "${colData.name}"`);
+            collection = await collectionsService.add({ name: colData.name, uuid: null });
+        } else {
+            console.log(`Import: Creating collection "${colData.name}"`);
+            collection = await collectionsService.add({ name: colData.name, uuid: colData.uuid });
+        }
+
+        colMap.set(colData.uuid, collection);
+        existingByName.set(collection.name, collection);
+        importedCollections++;
+    }
+
+    // Import groups
+    if (metadata.groups) {
+        console.log(`Import: Processing ${metadata.groups.length} groups`);
+        for (const groupData of metadata.groups) {
+            const collection = colMap.get(groupData.collectionUuid);
+            if (collection) {
+                try {
+                    await zapsService.addGroup({
+                        name: groupData.name,
+                        collectionUuid: collection.uuid,
+                        uuid: groupData.uuid,
+                        position: groupData.position,
+                    });
+                    importedGroups++;
+                } catch (e) { 
+                    console.warn(`Import: Group "${groupData.name}" already exists, skipping`);
+                }
+            }
+        }
+    }
+
+    // Import zaps
+    if (metadata.zaps) {
+        const totalZaps = metadata.zaps.length;
+        console.log(`Import: Processing ${totalZaps} zaps`);
+        for (let zi = 0; zi < totalZaps; zi++) {
+            const zapData = metadata.zaps[zi];
+            showProgress('Importing sounds', zi + 1, totalZaps);
+            
+            const existing = zapsService.find({ uuid: zapData.uuid });
+            if (existing) {
+                const targetCol = colMap.get(zapData.collectionUuid);
+                if (existing.collectionUuid === targetCol?.uuid) {
+                    skippedZaps++;
+                    continue;
+                }
+                skippedZaps++;
+                continue;
+            }
+
+            const collection = colMap.get(zapData.collectionUuid);
+            if (!collection) {
+                skippedZaps++;
+                continue;
+            }
+
+            const soundData = sounds[zapData.filename];
+            if (!soundData) {
+                console.warn(`Import: Audio data missing for zap "${zapData.name}" (${zapData.filename})`);
+                skippedZaps++;
+                continue;
+            }
+
+            const fileId = crypto.randomUUID();
+            const mimeType = zapData.filename.endsWith('.ogg') ? 'audio/ogg'
+                : zapData.filename.endsWith('.mp3') ? 'audio/mpeg'
+                : zapData.filename.endsWith('.wav') ? 'audio/wav'
+                : zapData.filename.endsWith('.flac') ? 'audio/flac'
+                : 'audio/ogg';
+
+            const blob = new Blob([soundData], { type: mimeType });
+            await db.storeAudioBlob(fileId, blob, zapData.filename, mimeType);
+
+            try {
+                await zapsService.add({
+                    name: zapData.name,
+                    collection: collection.uuid,
+                    color: zapData.color || 'gray',
+                    loop: zapData.loop || false,
+                    startTime: zapData.startTime || 0,
+                    volume: zapData.volume ?? 1.0,
+                    groupName: zapData.groupName || '',
+                    hotkey: zapData.hotkey || '',
+                    nextSoundUuid: zapData.nextSoundUuid || '',
+                    gap: zapData.gap || 0,
+                    uuid: zapData.uuid,
+                    position: zapData.position || 0,
+                    fileId,
+                    originalFilename: zapData.filename,
+                });
+                importedZaps++;
+            } catch (e) {
+                console.error(`Import: Failed to add zap "${zapData.name}":`, e);
+                skippedZaps++;
+            }
+        }
+    }
+
+    console.log('Import: Success, cleaning up');
+    hideProgress();
+
+    // Refresh UI
+    state.emit('collections:loaded', { collections: collectionsService.items });
+    console.log('Import: Reloading zaps from DB');
+    await zapsService.load();
+    
+    const lastUuid = settings.getString('lastSelectedCollection');
+    const col = lastUuid ? collectionsService.find({ uuid: lastUuid }) : (collectionsService.items.length > 0 ? collectionsService.items[0] : null);
+    if (col) {
+        console.log(`Import: Selecting collection "${col.name}"`);
+        state.emit('collection:selected', { uuid: col.uuid });
+    }
+
+    // Show collections dropdown to show imported items
+    state.emit('shortcut:collections', {});
+
+    // Auto preload all sounds immediately
+    const zapsToPreload = zapsService.zaps;
+    if (zapsToPreload.length > 0) {
+        console.log(`Import: Triggering preload for ${zapsToPreload.length} zaps`);
+        player.preloadAll(zapsToPreload);
+    }
+
+    let msg = `Imported: ${importedCollections} collections`;
+    if (importedGroups > 0) msg += `, ${importedGroups} groups`;
+    if (importedZaps > 0) msg += `, ${importedZaps} sounds`;
+    if (skippedZaps > 0) msg += ` (${skippedZaps} skipped)`;
+    showToast(msg);
 }
 
 async function doExport() {

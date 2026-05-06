@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import { state } from './state.js';
-import { db } from './db.js';
+import { db, Database } from './db.js';
 import { settings } from './settings.js';
 import { player } from './player.js';
 import { collectionsService } from './services/CollectionsService.js';
@@ -21,6 +21,7 @@ import { init as initTutorial } from './ui/tutorial.js';
 async function init() {
     try {
         await db.open();
+        Database.requestPersistence().catch(() => {});
         await Promise.all([collectionsService.load(), zapsService.load()]);
         applyTheme();
         initToast();
@@ -100,9 +101,15 @@ async function init() {
             const result = await pruneOrphanedFiles();
             player.clearCache();
             const msg = result.removed > 0
-                ? `Cleared ${result.removed} cached file(s), ${(result.freed / 1024).toFixed(1)} KiB freed.`
-                : 'Cache is empty.';
+                ? `Pruned ${result.removed} orphaned files. Freeing up ${(result.freed / (1024 * 1024)).toFixed(1)} MB.`
+                : 'No orphaned files found.';
             showToast(msg, 3000);
+        });
+
+        state.on('shortcut:clear-cache', async () => {
+            player.clearCache();
+            await db.clearDecodedCache();
+            showToast('Decoded audio cache cleared.', 3000);
         });
 
         state.on('shortcut:tutorial', () => state.emit('tutorial:show', {}));

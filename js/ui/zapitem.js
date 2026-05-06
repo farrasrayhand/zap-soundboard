@@ -201,7 +201,8 @@ export function createZapItem(zap) {
         playIcon.innerHTML = ICONS.play;
     }
 
-    if (!isPreloaded) {
+    const isReady = player.isReady(zap);
+    if (!isReady) {
         playBtn.disabled = true;
     }
 
@@ -345,18 +346,37 @@ state.on('play:resumed', ({ uuid }) => {
 });
 
 state.on('play:loading', ({ uuid }) => {
+    updateZapItemLoading(uuid, true);
+});
+
+state.on('preload:loading', ({ uuid }) => {
+    updateZapItemLoading(uuid, true);
+});
+
+state.on('preload:zap-done', ({ uuid }) => {
+    updateZapItemLoading(uuid, false);
+    updateAllPlayButtons();
+});
+
+function updateZapItemLoading(uuid, isLoading) {
     const el = itemElements.get(uuid);
     if (el) {
         const playBtn = el.querySelector('.zap-play-btn');
         const playIcon = el.querySelector('.zap-play-icon');
-        if (playBtn) playBtn.disabled = true;
-        if (playIcon) playIcon.innerHTML = '<span class="spinner"></span>';
+        if (playBtn) playBtn.disabled = isLoading;
+        if (playIcon) {
+            if (isLoading) {
+                playIcon.innerHTML = '<span class="spinner"></span>';
+            } else {
+                // Restore icon based on current state
+                const zap = zapsService.find({ uuid });
+                const isPlaying = player.isActive(uuid) && zap?.playing && !zap?.paused;
+                const canPause = settings.getBoolean('enablePause') && !settings.getBoolean('safetyMode');
+                playIcon.innerHTML = isPlaying && canPause ? ICONS.pause : ICONS.play;
+            }
+        }
     }
-});
-
-state.on('preload:zap-done', ({ uuid }) => {
-    updateAllPlayButtons();
-});
+}
 
 state.on('zap:updated', ({ uuid, property }) => {
     const el = itemElements.get(uuid);
