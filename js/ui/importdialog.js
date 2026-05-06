@@ -271,6 +271,9 @@ async function doImport(replace) {
             state.emit('collection:selected', { uuid: col.uuid });
         }
 
+        // Show collections dropdown to show imported items
+        state.emit('shortcut:collections', {});
+
         // Auto preload all sounds immediately
         const zapsToPreload = zapsService.zaps;
         if (zapsToPreload.length > 0) {

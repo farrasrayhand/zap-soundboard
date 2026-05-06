@@ -27,7 +27,7 @@ export function init() {
         mainMenuPopover.classList.toggle('hidden');
         collectionsPopover.classList.add('hidden');
         if (!isOpen)
-            positionPopover(mainMenuPopover, btnMenu);
+            positionPopover(mainMenuPopover, btnMenu, 'right');
     });
 
     // Close menus on outside click
@@ -55,7 +55,7 @@ export function init() {
         mainMenuPopover.classList.add('hidden');
         if (!isOpen) {
             renderCollectionsPopover();
-            positionPopover(collectionsPopover, collectionsToggle);
+            positionPopover(collectionsPopover, collectionsToggle, 'center');
         }
     });
 
@@ -76,14 +76,32 @@ export function init() {
             state.emit('collection:selected', { uuid: col.uuid });
         }
     });
+
+    state.on('shortcut:collections', () => openCollectionsPopover());
 }
 
-function positionPopover(popover, anchor) {
+function openCollectionsPopover() {
+    mainMenuPopover.classList.add('hidden');
+    collectionsPopover.classList.remove('hidden');
+    renderCollectionsPopover();
+    positionPopover(collectionsPopover, collectionsToggle, 'center');
+}
+
+function positionPopover(popover, anchor, align = 'right') {
     const rect = anchor.getBoundingClientRect();
     popover.style.position = 'fixed';
     popover.style.top = (rect.bottom + 4) + 'px';
-    popover.style.right = (window.innerWidth - rect.right) + 'px';
-    popover.style.left = 'auto';
+    
+    if (align === 'center') {
+        const center = rect.left + (rect.width / 2);
+        popover.style.left = center + 'px';
+        popover.style.right = 'auto';
+        popover.style.transform = 'translateX(-50%)';
+    } else {
+        popover.style.right = (window.innerWidth - rect.right) + 'px';
+        popover.style.left = 'auto';
+        popover.style.transform = 'none';
+    }
     popover.style.bottom = 'auto';
 }
 
